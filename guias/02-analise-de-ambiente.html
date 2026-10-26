@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análise de ambiente — Da Análise ao Plano</title>
+<!-- Página gerada por ferramentas/gerar_guias.py a partir do Markdown em conteudo/. Não edite à mão. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/portal.css">
+<link rel="stylesheet" href="../assets/css/guia.css">
+</head>
+<body data-curto="Análise de ambiente">
+
+<div id="progress-bar"></div>
+<button id="sidebar-toggle" aria-label="Abrir sumário"><span></span><span></span><span></span></button>
+<div id="overlay"></div>
+
+<nav id="sidebar" aria-label="Sumário">
+  <div class="sidebar-badge"><span class="dot"></span><span>Guia 02 · Bloco 1</span></div>
+  <div class="sidebar-title">Análise de ambiente</div>
+  <a class="nav-item nav-voltar" href="../index.html#trilha">← Voltar à trilha</a>
+  <a class="nav-item" href="#intro">Início</a>
+  <a class="nav-item" href="#em-uma-frase">Em uma frase</a>
+  <a class="nav-item" href="#o-essencial">O essencial</a>
+  <a class="nav-item sub" href="#interno-ou-externo-o-teste-do-controle">Interno ou externo? O teste do controle</a>
+  <a class="nav-item sub" href="#ambiente-externo-dois-niveis">Ambiente externo: dois níveis</a>
+  <a class="nav-item sub" href="#ambiente-interno-forca-sem-evidencia-e-desejo">Ambiente interno: força sem evidência é desejo</a>
+  <a class="nav-item sub" href="#do-diagnostico-a-direcao-a-tows-swot-cruzada">Do diagnóstico à direção: a TOWS (SWOT cruzada)</a>
+  <a class="nav-item" href="#passo-a-passo">Passo a passo</a>
+  <a class="nav-item" href="#exemplo-agrosense">Exemplo: AgroSense</a>
+  <a class="nav-item" href="#erros-comuns">Erros comuns</a>
+  <a class="nav-item" href="#duvidas-frequentes">Dúvidas frequentes</a>
+  <a class="nav-item" href="#suas-folhas-estao-prontas-quando">Suas folhas estão prontas quando…</a>
+  <a class="nav-item" href="#para-saber-mais">Para saber mais</a>
+  <a class="nav-item nav-atividade" href="../folhas/bloco1.html">✎ Folhas 1 e 2 · Radar e TOWS</a>
+</nav>
+
+<main class="wrapper">
+
+  <section class="hero" id="intro">
+    <div class="hero-tag"><span class="dot"></span>Guia 02 · Bloco 1</div>
+    <h1>Análise de ambiente</h1>
+    <p class="hero-sub">Bloco 1 · Folhas 1 (Radar do ambiente) e 2 (Cruzamento TOWS)</p>
+    <!--g--><div class="hero-meta">
+      <div class="meta-item"><span class="meta-label">Tempo de leitura</span><span class="meta-value">6 min</span></div>
+      <div class="meta-item"><span class="meta-label">Etapa</span><span class="meta-value">Aula 1 · Bloco 1</span></div>
+      <div class="meta-item"><span class="meta-label">Folha</span><span class="meta-value">Folhas 1 e 2 · Radar e TOWS</span></div>
+    </div>
+    <div class="hero-acoes">
+      <a class="hero-btn" href="../folhas/bloco1.html">✎ Abrir: Folhas 1 e 2 · Radar e TOWS</a>
+      <button type="button" class="hero-btn hero-btn-ghost" onclick="window.print()">Imprimir / salvar PDF</button>
+    </div><!--/g-->
+  </section>
+
+<section class="secao secao-frase" id="em-uma-frase"><h2 class="secao-titulo">Em uma frase</h2>
+<p>Olhe <strong>para fora</strong> (o que o mercado oferece e ameaça) e <strong>para dentro</strong> (o que a empresa tem de melhor e de pior). Depois <strong>cruze os dois</strong> para descobrir o que fazer.</p>
+</section>
+<section class="secao" id="o-essencial"><h2 class="secao-titulo">O essencial</h2>
+<h3 class="sub3" id="interno-ou-externo-o-teste-do-controle">Interno ou externo? O teste do controle</h3>
+<div class="tabela-wrap"><table class="tabela tabela-cards"><thead><tr><th>Pergunta</th><th>Se a resposta é SIM</th><th>Se é NÃO</th></tr></thead><tbody><tr><td data-label="Pergunta">A empresa <strong>controla</strong> isso?</td><td data-label="Se a resposta é SIM">É <strong>interno</strong>: força ou fraqueza</td><td data-label="Se é NÃO">É <strong>externo</strong>: oportunidade ou ameaça</td></tr></tbody></table></div>
+<p>Exemplos: "nova linha de crédito do governo" → externo (você não controla). "Equipe sem experiência comercial" → interno (você pode mudar).</p>
+<h3 class="sub3" id="ambiente-externo-dois-niveis">Ambiente externo: dois níveis</h3>
+<p><strong>1. Macroambiente — use o PESTEL como checklist</strong> (não precisa preencher todas as letras; serve para não esquecer nada):</p>
+<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Letra</th><th>Perguntas úteis para empresas de tecnologia</th></tr></thead><tbody><tr><td data-label="Letra"><strong>P</strong>olítico</td><td data-label="Perguntas úteis para empresas de tecnologia">Há programas, compras públicas ou incentivos que me afetam?</td></tr><tr><td data-label="Letra"><strong>E</strong>conômico</td><td data-label="Perguntas úteis para empresas de tecnologia">Juros, câmbio e crédito afetam meu cliente ou meus custos?</td></tr><tr><td data-label="Letra"><strong>S</strong>ocial</td><td data-label="Perguntas úteis para empresas de tecnologia">Mudanças de comportamento aumentam ou reduzem a demanda?</td></tr><tr><td data-label="Letra"><strong>T</strong>ecnológico</td><td data-label="Perguntas úteis para empresas de tecnologia">Alguma tecnologia nova (IA, conectividade, automação) cria ou destrói espaço para mim?</td></tr><tr><td data-label="Letra"><strong>E</strong>cológico</td><td data-label="Perguntas úteis para empresas de tecnologia">Exigências ambientais ou de sustentabilidade geram demanda ou restrição?</td></tr><tr><td data-label="Letra"><strong>L</strong>egal</td><td data-label="Perguntas úteis para empresas de tecnologia">LGPD, regulação setorial, certificações: o que me obriga ou me protege?</td></tr></tbody></table></div>
+<p>E também: <strong>fomento</strong> (Finep, fundação de amparo à pesquisa do estado, editais de inovação) e <strong>ecossistema</strong> (o próprio parque, universidades, investidores).</p>
+<p><strong>2. Setor — as Cinco Forças, em versão rápida.</strong> A pergunta-guia é: <em>"quem pode capturar o valor que eu gero?"</em></p>
+<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Força</th><th>Pergunta rápida</th></tr></thead><tbody><tr><td data-label="Força">Rivalidade</td><td data-label="Pergunta rápida">Quantos concorrentes diretos? A disputa é por preço?</td></tr><tr><td data-label="Força">Novos entrantes</td><td data-label="Pergunta rápida">É fácil alguém entrar no meu mercado amanhã?</td></tr><tr><td data-label="Força">Substitutos</td><td data-label="Pergunta rápida">O cliente pode resolver o problema de outro jeito (inclusive planilha ou "não fazer nada")?</td></tr><tr><td data-label="Força">Poder do cliente</td><td data-label="Pergunta rápida">Meus clientes são poucos e grandes? Conseguem me pressionar no preço?</td></tr><tr><td data-label="Força">Poder do fornecedor</td><td data-label="Pergunta rápida">Dependo de poucos fornecedores (componentes, nuvem, plataformas)?</td></tr></tbody></table></div>
+<h3 class="sub3" id="ambiente-interno-forca-sem-evidencia-e-desejo">Ambiente interno: força sem evidência é desejo</h3>
+<p>Uma força só é força se <strong>o cliente percebe e paga por ela</strong>. Para cada força e fraqueza, anote uma <strong>evidência</strong>: um número, um fato, uma fala de cliente.</p>
+<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Fraco</th><th>Forte</th></tr></thead><tbody><tr><td data-label="Fraco">"Equipe qualificada"</td><td data-label="Forte">"3 dos 14 colaboradores são agrônomos; clientes citam o suporte técnico como motivo de renovação"</td></tr><tr><td data-label="Fraco">"Produto inovador"</td><td data-label="Forte">"Sensor desenvolvido internamente custa 30% menos que o importado equivalente"</td></tr><tr><td data-label="Fraco">"Atendimento ruim"</td><td data-label="Forte">"Tempo médio de implantação é de 21 dias; 4 reclamações formais no último semestre"</td></tr></tbody></table></div>
+<p>Para saber se uma força é realmente uma vantagem, faça o <strong>teste VRIO</strong> rápido:</p>
+<ul><li><strong>V</strong>aliosa? Ajuda a aproveitar uma oportunidade ou a neutralizar uma ameaça?</li><li><strong>R</strong>ara? Poucos concorrentes têm?</li><li><strong>I</strong>mitação difícil? Seria caro ou demorado copiar?</li><li><strong>O</strong>rganizada? A empresa tem processos para explorar essa força?</li></ul>
+<p>Quatro "sim" indicam vantagem sustentável. Só "valiosa" indica paridade: é bom ter, mas não diferencia.</p>
+<h3 class="sub3" id="do-diagnostico-a-direcao-a-tows-swot-cruzada">Do diagnóstico à direção: a TOWS (SWOT cruzada)</h3>
+<p>A SWOT tradicional para no diagnóstico. A TOWS <strong>cruza</strong> os quadrantes e gera direções:</p>
+<div class="tabela-wrap"><table class="tabela tabela-cards"><thead><tr><th></th><th><strong>Oportunidades</strong></th><th><strong>Ameaças</strong></th></tr></thead><tbody><tr><td data-label=""><strong>Forças</strong></td><td data-label="Oportunidades"><strong>FO — Crescer:</strong> use forças para aproveitar oportunidades</td><td data-label="Ameaças"><strong>FA — Defender:</strong> use forças para neutralizar ameaças</td></tr><tr><td data-label=""><strong>Fraquezas</strong></td><td data-label="Oportunidades"><strong>fO — Desenvolver:</strong> corrija fraquezas para não perder oportunidades</td><td data-label="Ameaças"><strong>fA — Proteger:</strong> reduza a exposição onde você é fraco e o ambiente é hostil</td></tr></tbody></table></div>
+<p>Cada direção <strong>começa com um verbo</strong> e combina pelo menos um item de cada lado.</p>
+</section>
+<section class="secao" id="passo-a-passo"><h2 class="secao-titulo">Passo a passo</h2>
+<!--g--><a class="ponte" href="../folhas/bloco1.html#s-externo"><span class="ponte-ico" aria-hidden="true">✎</span><span><span class="ponte-rot">Aplique na sua empresa</span><strong>Folha 1 · Radar do ambiente →</strong></span></a><!--/g-->
+<p><strong>Folha 1 — Radar do ambiente</strong></p>
+<ol class="numerada"><li>Passe rapidamente pelo PESTEL e pelas Cinco Forças. Anote tudo o que vier à cabeça em rascunho.</li><li>Escolha as <strong>3 oportunidades</strong> e as <strong>3 ameaças</strong> mais relevantes: aquelas que mudam o resultado da empresa nos próximos 2–3 anos.</li><li>Liste <strong>3 forças</strong> e <strong>3 fraquezas</strong>, cada uma com uma <strong>evidência</strong>.</li><li>Revise: algum item interno foi parar no externo, ou vice-versa? Aplique o teste do controle.</li></ol>
+<p><strong>Folha 2 — Cruzamento TOWS</strong></p>
+<ol class="numerada"><li>Para cada quadrante, pegue um item de cada lado e pergunte: <em>"o que fazemos com isso?"</em></li><li>Escreva <strong>pelo menos uma direção por quadrante</strong> (mínimo de 4 no total).</li><li>Comece cada direção com um verbo: ampliar, lançar, reduzir, padronizar, proteger, migrar…</li><li>Anote entre parênteses quais itens da Folha 1 deram origem à direção (ex.: F1 + O2).</li></ol>
+</section>
+<section class="secao" id="exemplo-agrosense"><h2 class="secao-titulo">Exemplo: AgroSense</h2>
+<!--g--><a class="ponte ponte-ex" href="../folhas/bloco1.html?exemplo"><span class="ponte-ico" aria-hidden="true">◎</span><span><span class="ponte-rot">Veja no caderno</span><strong>Folhas 1 e 2 da AgroSense, dentro do caderno →</strong></span></a><!--/g-->
+<p><strong>Folha 1 — Radar</strong></p>
+<div class="tabela-wrap"><table class="tabela tabela-cards"><thead><tr><th></th><th>Item</th><th>Evidência</th></tr></thead><tbody><tr><td data-label=""><strong>O1</strong></td><td data-label="Item">Linhas de crédito para agricultura de precisão</td><td data-label="Evidência">Cooperativas relatam associados buscando financiar tecnologia</td></tr><tr><td data-label=""><strong>O2</strong></td><td data-label="Item">Cooperativas querem digitalizar a assistência técnica</td><td data-label="Evidência">3 cooperativas pediram proposta nos últimos 6 meses</td></tr><tr><td data-label=""><strong>O3</strong></td><td data-label="Item">Exigências de rastreabilidade de compradores internacionais</td><td data-label="Evidência">Tradings passaram a pedir dados de manejo por talhão</td></tr><tr><td data-label=""><strong>A1</strong></td><td data-label="Item">Fabricantes de máquinas oferecem plataformas embarcadas</td><td data-label="Evidência">Duas marcas grandes já incluem monitoramento no pacote</td></tr><tr><td data-label=""><strong>A2</strong></td><td data-label="Item">Câmbio encarece componentes importados</td><td data-label="Evidência">Custo do sensor subiu 18% em 12 meses</td></tr><tr><td data-label=""><strong>A3</strong></td><td data-label="Item">Conectividade rural limitada</td><td data-label="Evidência">25% das áreas atendidas têm sinal instável</td></tr><tr><td data-label=""><strong>F1</strong></td><td data-label="Item">Base de dados de 3 safras</td><td data-label="Evidência">2.300 hectares monitorados com histórico</td></tr><tr><td data-label=""><strong>F2</strong></td><td data-label="Item">Suporte agronômico próprio</td><td data-label="Evidência">3 agrônomos na equipe; suporte é o 1º motivo de renovação citado</td></tr><tr><td data-label=""><strong>F3</strong></td><td data-label="Item">Sensor de custo mais baixo</td><td data-label="Evidência">30% mais barato que o importado equivalente</td></tr><tr><td data-label=""><strong>f1</strong></td><td data-label="Item">Dependência de venda avulsa de hardware</td><td data-label="Evidência">70% da receita vem de venda de sensores</td></tr><tr><td data-label=""><strong>f2</strong></td><td data-label="Item">Implantação lenta</td><td data-label="Evidência">Média de 21 dias entre contrato e sensor operando</td></tr><tr><td data-label=""><strong>f3</strong></td><td data-label="Item">Gestão financeira sem orçamento</td><td data-label="Evidência">Não há orçamento anual; decisões são tomadas pelo saldo bancário</td></tr></tbody></table></div>
+<p><strong>Folha 2 — TOWS</strong></p>
+<div class="tabela-wrap"><table class="tabela tabela-cards"><thead><tr><th></th><th><strong>Oportunidades</strong></th><th><strong>Ameaças</strong></th></tr></thead><tbody><tr><td data-label=""><strong>Forças</strong></td><td data-label="Oportunidades"><strong>FO:</strong> Criar pacote de monitoramento financiável via cooperativa (F2 + F3 + O1 + O2)</td><td data-label="Ameaças"><strong>FA:</strong> Oferecer recomendações agronômicas independentes da marca da máquina (F1 + F2 + A1)</td></tr><tr><td data-label=""><strong>Fraquezas</strong></td><td data-label="Oportunidades"><strong>fO:</strong> Padronizar a implantação para atender cooperativas em escala (f2 + O2)</td><td data-label="Ameaças"><strong>fA:</strong> Migrar a receita para assinatura, reduzindo a exposição ao câmbio do hardware (f1 + A2)</td></tr></tbody></table></div>
+</section>
+<section class="secao" id="erros-comuns"><h2 class="secao-titulo">Erros comuns</h2>
+<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Erro</th><th>Como corrigir</th></tr></thead><tbody><tr><td data-label="Erro">Listar 15 itens por quadrante</td><td data-label="Como corrigir">Escolha os 3 que mais mudam o resultado. O resto é ruído.</td></tr><tr><td data-label="Erro">"Crise econômica" como ameaça</td><td data-label="Como corrigir">Seja específico: <em>qual</em> efeito da crise atinge <em>você</em>? (ex.: "clientes adiando investimento por juros altos")</td></tr><tr><td data-label="Erro">Forças genéricas ("comprometimento", "inovação")</td><td data-label="Como corrigir">Exija evidência. Sem evidência, não entra.</td></tr><tr><td data-label="Erro">Oportunidade que é desejo ("crescer no mercado X")</td><td data-label="Como corrigir">Oportunidade é algo que <strong>acontece lá fora</strong>. Crescer é o que você faz com ela.</td></tr><tr><td data-label="Erro">TOWS repetindo a SWOT</td><td data-label="Como corrigir">A direção precisa ser uma <strong>ação estratégica</strong>, não a reescrita de um item.</td></tr></tbody></table></div>
+</section>
+<section class="secao" id="duvidas-frequentes"><h2 class="secao-titulo">Dúvidas frequentes</h2>
+<div class="faq"><p class="faq-q">A mesma coisa pode ser oportunidade e ameaça?</p><p>Pode. A IA generativa, por exemplo, pode ser oportunidade (novo produto) e ameaça (concorrente que automatiza seu serviço). Registre nos dois lados e trate com direções diferentes.</p></div>
+<div class="faq"><p class="faq-q">Não tenho dados. O que serve como evidência?</p><p>Qualquer fato verificável: número de clientes, prazos, custos, uma fala de cliente, uma reclamação registrada, um contrato perdido. Se não houver nada, marque "a levantar". Isso já diz muito.</p></div>
+<div class="faq"><p class="faq-q">Sou incubada e ainda não vendi. Como analiso o ambiente?</p><p>Foque no mercado-alvo e na concorrência direta. Suas forças podem vir da tecnologia, da equipe e dos pilotos; as evidências, dos testes e das conversas com clientes potenciais.</p></div>
+<div class="faq"><p class="faq-q">Preciso preencher os 4 quadrantes da TOWS?</p><p>Sim, pelo menos um item em cada. Um quadrante vazio costuma ser um ponto cego: muitas empresas esquecem o fA (proteger) e só percebem o risco quando ele aparece.</p></div>
+<div class="faq"><p class="faq-q">Qual a diferença entre direção e ação?</p><p>A direção é o caminho ("Migrar a receita para assinatura"). A ação é o passo concreto, com dono e prazo ("Lançar plano anual com desconto até março"). Ações entram só no Bloco 5.</p></div>
+</section>
+<section class="secao" id="suas-folhas-estao-prontas-quando"><h2 class="secao-titulo">Suas folhas estão prontas quando…</h2>
+<ul class="checklist-fixa"><li><span class="chk-caixa" aria-hidden="true"></span><span>Há 3 oportunidades e 3 ameaças <strong>específicas</strong> para a sua empresa.</span></li><li><span class="chk-caixa" aria-hidden="true"></span><span>Cada força e fraqueza tem uma evidência (ou está marcada como "a levantar").</span></li><li><span class="chk-caixa" aria-hidden="true"></span><span>Nenhum item interno está no externo, e vice-versa.</span></li><li><span class="chk-caixa" aria-hidden="true"></span><span>Há pelo menos uma direção em cada quadrante da TOWS, começando com verbo.</span></li><li><span class="chk-caixa" aria-hidden="true"></span><span>Cada direção indica os itens da Folha 1 que a originaram.</span></li></ul>
+<!--g--><a class="ponte" href="../folhas/bloco1.html#s-pronta"><span class="ponte-ico" aria-hidden="true">✎</span><span><span class="ponte-rot">Aplique na sua empresa</span><strong>Folhas 1 e 2 · marque a lista final →</strong></span></a><!--/g-->
+</section>
+<!--g--><aside class="cta-atividade"><div><span class="cta-eyebrow">Hora de aplicar na sua empresa</span><h3>Folhas 1 e 2 · Radar e TOWS</h3><p>Logo depois da exposição, cada passo deste guia vira uma seção da folha, com o exemplo da AgroSense ao lado. Tudo fica salvo no seu navegador e no arquivo da empresa.</p></div><a class="cta-btn" href="../folhas/bloco1.html">Abrir a folha →</a></aside><!--/g-->
+<section class="secao secao-fontes" id="para-saber-mais"><h2 class="secao-titulo">Para saber mais</h2>
+<ul><li>Porter, M. E. (2008). <em>The Five Competitive Forces That Shape Strategy</em>. Harvard Business Review.</li><li>Weihrich, H. (1982). <em>The TOWS Matrix — A Tool for Situational Analysis</em>. Long Range Planning.</li><li>Barney, J. B.; Hesterly, W. S. <em>Administração Estratégica e Vantagem Competitiva</em>. Pearson (capítulo sobre VRIO).</li></ul>
+</section>
+
+</main>
+
+<button id="back-to-top" title="Voltar ao topo" aria-label="Voltar ao topo">&#8593;</button>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/portal.js"></script>
+<script src="../assets/js/guia.js"></script>
+</body>
+</html>

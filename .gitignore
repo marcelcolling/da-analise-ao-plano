@@ -1,0 +1,4 @@
+# Trilha do facilitador (tempos, roteiro, orientações): fica só na pasta local (OneDrive), não vai para o GitHub
+conteudo/facilitador/
+__pycache__/
+*.pdf

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Da Análise ao Plano — Workshop de planejamento estratégico</title>
+<meta name="description" content="Guias e folhas de atividade do workshop Da Análise ao Plano: cada empresa constrói o próprio plano estratégico, em BSC, durante as aulas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/portal.css">
+<style>
+  :root {
+    --az:#1F3A5F; --az-deep:#152A45; --az-noite:#0E1D31; --ard:#455066; --ard-tint:rgba(69,80,102,0.09);
+    --papel:#FCFCFA; --papel-dim:#EFEEE7; --linha:rgba(31,58,95,0.14);
+    --am:#EFB93C; --am-ink:#5B4212; --tx:#1E2733; --muted:#5E6878;
+    --display:'Fraunces', Georgia, serif; --body:'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; scroll-padding-top:70px; -webkit-text-size-adjust:100%; }
+  body { margin:0; font-family:var(--body); background:var(--papel); color:var(--tx); line-height:1.6; overflow-x:hidden; }
+  a { color:inherit; }
+  ::selection { background:var(--am); color:var(--az-deep); }
+  .wrap { max-width:var(--vd-largura); margin:0 auto; padding:0 1.5rem; }
+
+  /* ---------- primeira dobra ---------- */
+  .hero { background:var(--az); color:#fff; position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; right:-140px; top:-160px; width:460px; height:460px; border-radius:50%; border:2px solid rgba(239,185,60,0.2); }
+  .hero-grid { display:grid; grid-template-columns:1.3fr 1fr; gap:3rem; align-items:center; padding-top:clamp(2.2rem,5vw,3.2rem); padding-bottom:clamp(2rem,4vw,2.8rem); position:relative; z-index:1; }
+  .tag { display:inline-flex; align-items:center; gap:0.55rem; border:1px solid rgba(239,185,60,0.5); color:var(--am); font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.35rem 0.95rem; border-radius:100px; font-weight:600; }
+  .tag i { width:8px; height:8px; border-radius:50%; background:var(--am); display:inline-block; }
+  .hero h1 { font-family:var(--display); font-weight:700; font-size:clamp(2.4rem,5.2vw,3.9rem); line-height:1.02; margin:1.1rem 0 0.9rem; letter-spacing:-0.01em; }
+  .hero h1 em { font-style:italic; font-weight:500; color:var(--am); }
+  .hero-sub { font-family:var(--display); font-style:italic; font-size:clamp(1.05rem,1.8vw,1.25rem); color:rgba(255,255,255,0.84); max-width:52ch; margin:0 0 1.2rem; line-height:1.5; }
+  .hero-pontos { list-style:none; margin:0; padding:0; display:grid; gap:0.45rem; font-size:0.92rem; color:rgba(255,255,255,0.8); }
+  .hero-pontos li { position:relative; padding-left:1.2rem; } .hero-pontos li::before { content:'◆'; color:var(--am); font-size:0.7rem; position:absolute; left:0; top:0.3rem; }
+  .hero-pontos strong { color:#fff; }
+
+  .sessao-card { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.16); border-radius:20px; padding:1.5rem 1.6rem; }
+  .sessao-card .eyebrow { font-size:0.72rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--am); margin-bottom:0.5rem; }
+  .sessao-card h2 { font-family:var(--display); font-weight:600; font-size:1.4rem; margin:0 0 0.45rem; line-height:1.2; }
+  .sessao-card p { font-size:0.88rem; color:rgba(255,255,255,0.78); margin:0 0 1.1rem; line-height:1.6; }
+  .sessao-card .vd-btn { padding:0.7rem 1.1rem; font-size:0.86rem; text-decoration:none; }
+  .progresso { list-style:none; margin:0 0 1.1rem; padding:0; display:flex; flex-direction:column; gap:0.3rem; }
+  .progresso li { display:flex; justify-content:space-between; gap:1rem; font-size:0.82rem; background:rgba(255,255,255,0.06); border-radius:10px; padding:0.38rem 0.8rem; }
+  .progresso li a { text-decoration:none; }
+  .progresso li span:last-child { color:rgba(255,255,255,0.65); white-space:nowrap; }
+  .progresso li.andamento span:last-child { color:#f7d27a; }
+  .progresso li.pronta span:last-child { color:#8fe0b6; }
+  .sessao-acoes { display:flex; gap:0.6rem; flex-wrap:wrap; }
+  .priv { display:flex; gap:0.5rem; align-items:flex-start; font-size:0.8rem !important; color:rgba(255,255,255,0.72) !important; margin:1rem 0 0 !important; }
+  .priv::before { content:'🔒'; }
+
+  /* faixa: privacidade */
+  .faixa { background:var(--az-noite); color:#fff; padding:1.4rem 0; position:relative; z-index:1; }
+  .faixa .wrap { display:flex; justify-content:space-between; align-items:center; gap:1rem 2rem; flex-wrap:wrap; }
+  .faixa p { margin:0; color:rgba(255,255,255,0.78); font-size:0.95rem; max-width:86ch; }
+  .faixa strong { color:#fff; font-family:var(--display); font-weight:600; font-size:1.08rem; display:block; margin-bottom:0.15rem; }
+
+  /* ---------- trilha ---------- */
+  section.bloco { padding:clamp(2.8rem,6vw,4.2rem) 0; }
+  .trilha-topo { display:flex; justify-content:space-between; align-items:flex-end; gap:1.5rem 3rem; flex-wrap:wrap; margin-bottom:1.6rem; }
+  .eyebrow-sec { display:flex; align-items:center; gap:0.6rem; font-size:0.76rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--am-ink); margin-bottom:0.7rem; }
+  .eyebrow-sec i { width:8px; height:8px; border-radius:50%; border:2px solid var(--am); display:inline-block; }
+  h2.titulo-sec { font-family:var(--display); font-weight:600; font-size:clamp(1.8rem,3.6vw,2.4rem); color:var(--az); margin:0 0 0.6rem; line-height:1.12; }
+  p.intro-sec { color:var(--ard); font-size:1rem; max-width:84ch; margin:0; line-height:1.7; }
+  .legenda { display:flex; gap:0.6rem; flex-wrap:wrap; }
+  .legenda span { display:inline-flex; align-items:center; gap:0.5rem; font-size:0.8rem; font-weight:600; border-radius:100px; padding:0.4rem 0.85rem 0.4rem 0.45rem; }
+  .legenda b { width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.8rem; }
+  .lg-leitura { background:#fff; border:1px solid var(--linha); } .lg-leitura b { background:var(--ard-tint); color:var(--ard); }
+  .lg-atividade { background:var(--az); color:#fff; } .lg-atividade b { background:rgba(255,255,255,0.14); color:var(--am); }
+  .lg-doc { background:var(--papel-dim); border:1px solid var(--linha); } .lg-doc b { background:#fff; color:var(--az); }
+
+  .cadeia-mini { list-style:none; display:flex; flex-wrap:wrap; gap:0.35rem 0.2rem; padding:0; margin:0 0 2.2rem; }
+  .cadeia-mini li { display:flex; align-items:center; gap:0.2rem; font-size:0.8rem; font-weight:600; color:var(--az); }
+  .cadeia-mini li span { background:#fff; border:1px solid var(--linha); border-radius:100px; padding:0.25rem 0.7rem; }
+  .cadeia-mini li:not(:last-child)::after { content:'→'; color:var(--am-ink); margin-left:0.2rem; }
+  .cadeia-mini li.fim span { background:var(--am); border-color:var(--am); color:var(--az-deep); }
+
+  .aula-cab { display:flex; align-items:baseline; gap:0.8rem; flex-wrap:wrap; margin:2.4rem 0 1.1rem; padding-bottom:0.6rem; border-bottom:2px solid var(--az); }
+  .aula-cab:first-of-type { margin-top:0; }
+  .aula-cab h3 { font-family:var(--display); font-weight:700; color:var(--az); font-size:1.5rem; margin:0; }
+  .aula-cab span { color:var(--ard); font-size:0.92rem; }
+  .aula-cab b { background:var(--az); color:var(--am); font-family:var(--display); border-radius:8px; padding:0.1rem 0.55rem; font-size:1rem; }
+
+  .etapas { list-style:none; margin:0; padding:0; position:relative; display:grid; gap:1rem; }
+  .etapas::before { content:''; position:absolute; left:27px; top:30px; bottom:30px; width:2px; background:var(--az); opacity:0.18; }
+  .etapa { display:grid; grid-template-columns:56px 1fr; gap:1.1rem; }
+  .marco { width:56px; height:56px; border-radius:50%; background:var(--az); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--display); font-weight:700; font-size:1.05rem; position:relative; z-index:1; box-shadow:0 0 0 6px var(--papel); line-height:1; }
+  .marco small { font-family:var(--body); font-size:0.52rem; letter-spacing:0.08em; font-weight:600; opacity:0.75; margin-top:0.18rem; }
+  .etapa.pronta .marco { background:#2f8f5f; }
+  .etapa.andamento .marco { background:var(--am); color:var(--az-deep); }
+  .etapa-card { background:#fff; border:1px solid var(--linha); border-radius:20px; padding:1.3rem 1.4rem; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); gap:1.2rem 2rem; transition:border-color .2s, box-shadow .2s; }
+  .etapa-card:hover { border-color:rgba(31,58,95,0.3); box-shadow:0 18px 40px -30px rgba(21,42,69,0.5); }
+  .etapa-aula { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--am-ink); }
+  .etapa h4 { font-family:var(--display); font-weight:600; font-size:1.3rem; color:var(--az); margin:0.4rem 0 0.5rem; line-height:1.2; }
+  .etapa p.desc { font-size:0.9rem; color:var(--ard); margin:0 0 0.7rem; line-height:1.6; }
+  .etapa p.entrega { font-size:0.82rem; color:var(--muted); margin:0; padding-top:0.6rem; border-top:1px dashed var(--linha); line-height:1.5; }
+  .etapa p.entrega strong { color:var(--tx); }
+  .recursos { display:grid; gap:0.55rem; align-content:start; }
+  .rec { display:flex; align-items:center; gap:0.7rem; text-decoration:none; border-radius:14px; padding:0.65rem 0.85rem; transition:transform .15s, background .15s, border-color .15s; }
+  .rec:focus-visible { outline:3px solid var(--am); outline-offset:2px; }
+  .rec-ico { width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:0.95rem; }
+  .rec-txt { min-width:0; }
+  .rec-tipo { display:block; font-size:0.64rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; }
+  .rec-nome { display:block; font-weight:600; font-size:0.9rem; line-height:1.3; }
+  .rec-status { display:block; font-size:0.74rem; }
+  .rec-leitura { background:var(--papel); border:1.5px solid var(--linha); color:var(--tx); }
+  .rec-leitura .rec-ico { background:var(--ard-tint); color:var(--ard); }
+  .rec-leitura .rec-tipo { color:var(--ard); }
+  .rec-leitura:hover { border-color:var(--ard); background:#fff; transform:translateY(-1px); }
+  .rec-atividade { background:var(--az); border:1.5px solid var(--az); color:#fff; box-shadow:0 10px 24px -16px rgba(21,42,69,0.8); }
+  .rec-atividade .rec-ico { background:rgba(255,255,255,0.12); color:var(--am); }
+  .rec-atividade .rec-tipo { color:var(--am); }
+  .rec-atividade .rec-status { color:rgba(255,255,255,0.75); }
+  .rec-atividade .rec-status.andamento { color:#f7d27a; font-weight:600; }
+  .rec-atividade .rec-status.pronta { color:#8fe0b6; font-weight:600; }
+  .rec-atividade:hover { background:var(--az-deep); transform:translateY(-1px); }
+  .rec-doc { background:var(--papel-dim); border:1.5px solid var(--linha); color:var(--tx); }
+  .rec-doc .rec-ico { background:#fff; color:var(--az); }
+  .rec-doc .rec-tipo { color:var(--az); }
+  .rec-doc:hover { border-color:var(--az); transform:translateY(-1px); }
+  .rec-ex { font-size:0.8rem; font-weight:600; color:var(--ard); text-decoration:none; padding:0 0.2rem; }
+  .rec-ex:hover { color:var(--az); text-decoration:underline; }
+
+  footer { background:var(--az-deep); color:rgba(255,255,255,0.65); font-size:0.82rem; padding:2rem 0; }
+  footer .wrap { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; align-items:center; }
+  footer strong { color:#fff; font-family:var(--display); font-weight:600; }
+  footer button, footer a { background:none; border:none; color:var(--am); font:inherit; font-weight:600; cursor:pointer; padding:0; text-decoration:underline; }
+
+  @media (max-width:980px) {
+    .hero-grid { grid-template-columns:1fr; gap:1.8rem; }
+    .etapa-card { grid-template-columns:1fr; }
+  }
+  @media (max-width:560px) {
+    .wrap { padding-left:1rem; padding-right:1rem; }
+    .etapas::before { left:19px; }
+    .etapa { grid-template-columns:40px 1fr; gap:0.7rem; }
+    .marco { width:40px; height:40px; font-size:0.85rem; box-shadow:0 0 0 4px var(--papel); }
+    .marco small { display:none; }
+    .etapa-card { padding:1.1rem 1rem; }
+    .sessao-card { padding:1.2rem 1.1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { .rec, .etapa-card { transition:none; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="tag"><i></i>Workshop · Parque Tecnológico</span>
+      <h1>Da Análise ao <em>Plano</em></h1>
+      <p class="hero-sub">Planejamento estratégico para empresas de base tecnológica. Cada conceito vira, na hora, uma folha preenchida da sua empresa.</p>
+      <ul class="hero-pontos">
+        <li>Dois encontros de 3 horas. Na Aula 1, do diagnóstico às ações; na Aula 2, o mapa do BSC e o lançamento no sistema do parque.</li>
+        <li>Em cada bloco: a exposição, o guia para consultar e, logo em seguida, a folha para aplicar na sua empresa.</li>
+        <li>Separe, no mesmo plano, o que é <strong>fazer melhor</strong> (eficácia operacional) e o que é <strong>fazer diferente</strong> (posicionamento).</li>
+        <li>Cada empresa sai com objetivos, indicadores com faróis e ações organizados nas quatro perspectivas do BSC.</li>
+      </ul>
+    </div>
+    <div class="sessao-card" id="cadernoCard" aria-live="polite"></div>
+  </div>
+  <div class="faixa">
+    <div class="wrap">
+      <p><strong>🔒 Suas respostas ficam com você</strong>Não há login, planilha nem servidor. O caderno é guardado neste navegador e no arquivo que a sua empresa baixa. Ninguém, nem o facilitador, recebe o que vocês escrevem. Salve o arquivo ao final de cada aula e traga-o para a Aula 2.</p>
+      <button type="button" class="vd-btn vd-btn-amarelo" id="btnComo">Como funciona</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="bloco" id="trilha">
+    <div class="wrap">
+      <div class="trilha-topo">
+        <div>
+          <div class="eyebrow-sec"><i></i>A trilha do workshop</div>
+          <h2 class="titulo-sec">Uma cadeia só, do diagnóstico ao sistema</h2>
+          <p class="intro-sec">Cada folha alimenta a seguinte: o que você escreve numa aparece, pronto para usar, nas próximas. Os guias são para consulta durante o preenchimento; o <a href="guias/00-guia-de-uso.html">guia de uso</a> explica a lógica do caderno e apresenta a AgroSense, a empresa-exemplo de todos os passos.</p>
+        </div>
+        <div class="legenda" aria-label="Legenda">
+          <span class="lg-leitura"><b aria-hidden="true">📖</b>Guia para consulta</span>
+          <span class="lg-atividade"><b aria-hidden="true">✎</b>Folha para aplicar</span>
+          <span class="lg-doc"><b aria-hidden="true">▤</b>Documento</span>
+        </div>
+      </div>
+
+      <ol class="cadeia-mini" aria-label="A lógica do caderno">
+        <li><span>Ponto de partida</span></li><li><span>Ambiente e TOWS</span></li><li><span>EO e posicionamento</span></li><li><span>Portfólio e crescimento</span></li>
+        <li><span>Objetivos, indicadores e faróis</span></li><li><span>Ações</span></li><li><span>Mapa do BSC</span></li><li class="fim"><span>Sistema do parque</span></li>
+      </ol>
+
+      <div class="aula-cab"><b>1</b><h3>Aula 1 · Construindo a estratégia</h3><span>do diagnóstico às ações: a empresa sai com uma cadeia estratégica completa</span></div>
+      <ol class="etapas">
+        <li class="etapa" data-pagina="abertura">
+          <span class="marco">F0<small>Abertura</small></span>
+          <article class="etapa-card">
+            <div>
+              <div class="etapa-aula">Abertura · Ponto de partida</div>
+              <h4>Quem somos hoje e aonde queremos chegar</h4>
+              <p class="desc">Antes de qualquer conceito: duas frases que ancoram o trabalho na realidade da empresa. Uma descreve o negócio de hoje; a outra, a ambição para 3 anos, com um número.</p>
+              <p class="entrega"><strong>Você sai com:</strong> a Folha 0, a referência contra a qual todo o resto será testado.</p>
+            </div>
+            <div class="recursos">
+              <a class="rec rec-leitura" href="guias/01-ponto-de-partida.html"><span class="rec-ico">📖</span><span class="rec-txt"><span class="rec-tipo">Guia 01</span><span class="rec-nome">Ponto de partida</span></span></a>
+              <a class="rec rec-atividade" href="folhas/abertura.html"><span class="rec-ico">✎</span><span class="rec-txt"><span class="rec-tipo">Folha 0</span><span class="rec-nome">Ponto de partida</span><span class="rec-status" data-status="abertura">Não iniciada</span></span></a>
+              <a class="rec-ex" href="folhas/abertura.html?exemplo">◎ Ver a folha preenchida pela AgroSense</a>
+            </div>
+          </article>
+        </li>
+        <li class="etapa" data-pagina="bloco1">
+          <span class="marco">F1·2<small>Bloco 1</small></span>
+          <article class="etapa-card">
+            <div>
+              <div class="etapa-aula">Bloco 1 · Análise de ambiente</div>
+              <h4>O que está fora, o que está dentro, e o que fazer com isso</h4>
+              <p class="desc">PESTEL e Cinco Forças como varredura; forças e fraquezas sempre com evidência e teste VRIO; e a SWOT cruzada (TOWS), que transforma o diagnóstico em direções: crescer, defender, desenvolver e proteger.</p>
+              <p class="entrega"><strong>Você sai com:</strong> o radar do ambiente e pelo menos quatro direções estratégicas.</p>
+            </div>
+            <div class="recursos">
+              <a class="rec rec-leitura" href="guias/02-analise-de-ambiente.html"><span class="rec-ico">📖</span><span class="rec-txt"><span class="rec-tipo">Guia 02</span><span class="rec-nome">Análise de ambiente</span></span></a>
+              <a class="rec rec-atividade" href="folhas/bloco1.html"><span class="rec-ico">✎</span><span class="rec-txt"><span class="rec-tipo">Folhas 1 e 2</span><span class="rec-nome">Radar do ambiente e cruzamento TOWS</span><span class="rec-status" data-status="bloco1">Não iniciada</span></span></a>
+              <a class="rec-ex" href="folhas/bloco1.html?exemplo">◎ Ver as folhas preenchidas pela AgroSense</a>
+            </div>
+          </article>
+        </li>
+        <li class="etapa" data-pagina="bloco2">
+          <span class="marco">F3<small>Bloco 2</small></span>
+          <article class="etapa-card">
+            <div>
+              <div class="etapa-aula">Bloco 2 · Porter: a estratégia está nas atividades</div>
+              <h4>Fazer melhor e fazer diferente</h4>
+              <p class="desc">Eficácia operacional pela Matriz de Maturidade (seis dimensões, cinco estágios, o gargalo) e posicionamento pelo sistema de atividades que se reforçam, com o teste do trade-off e o da imitação.</p>
+              <p class="entrega"><strong>Você sai com:</strong> 2 ou 3 direções de EO e o desenho do sistema de atividades do posicionamento.</p>
+            </div>
+            <div class="recursos">
+              <a class="rec rec-leitura" href="guias/03-porter-atividades.html"><span class="rec-ico">📖</span><span class="rec-txt"><span class="rec-tipo">Guia 03</span><span class="rec-nome">Porter: a estratégia está nas atividades</span></span></a>
+              <a class="rec rec-atividade" href="folhas/bloco2.html"><span class="rec-ico">✎</span><span class="rec-txt"><span class="rec-tipo">Folhas 3A e 3B</span><span class="rec-nome">Maturidade e sistema de atividades</span><span class="rec-status" data-status="bloco2">Não iniciada</span></span></a>
+              <a class="rec-ex" href="folhas/bloco2.html?exemplo">◎ Ver as folhas preenchidas pela AgroSense</a>
+            </div>
+          </article>
+        </li>
+        <li class="etapa" data-pagina="bloco3">
+          <span class="marco">F4<small>Bloco 3</small></span>
+          <article class="etapa-card">
+            <div>
+              <div class="etapa-aula">Bloco 3 · Matrizes BCG e Ansoff</div>
+              <h4>Onde investir e por onde crescer</h4>
+              <p class="desc">A BCG aplicada a produtos, linhas de receita ou segmentos, com uma decisão para cada um; a Ansoff para escolher um vetor de crescimento coerente com o trade-off e com a maturidade.</p>
+              <p class="entrega"><strong>Você sai com:</strong> o portfólio com decisões e um vetor de crescimento prioritário.</p>
+            </div>
+            <div class="recursos">
+              <a class="rec rec-leitura" href="guias/04-bcg-ansoff.html"><span class="rec-ico">📖</span><span class="rec-txt"><span class="rec-tipo">Guia 04</span><span class="rec-nome">Matrizes BCG e Ansoff</span></span></a>
+              <a class="rec rec-atividade" href="folhas/bloco3.html"><span class="rec-ico">✎</span><span class="rec-txt"><span class="rec-tipo">Folha 4</span><span class="rec-nome">Portfólio e crescimento</span><span class="rec-status" data-status="bloco3">Não iniciada</span></span></a>
+              <a class="rec-ex" href="folhas/bloco3.html?exemplo">◎ Ver a folha preenchida pela AgroSense</a>
+            </div>
+          </article>
+        </li>
+        <li class="etapa" data-pagina="bloco4">
+          <span class="marco">F5<small>Bloco 4</small></span>
+          <article class="etapa-card">
+            <div>
+              <div class="etapa-aula">Bloco 4 · Objetivos, indicadores e faróis</div>
+              <h4>Da direção à gestão</h4>
+              <p class="desc">Objetivos bem redigidos (EO e POS), indicadores de resultado e de tendência sem métricas de vaidade, fichas completas e faróis definidos antes de medir, com gatilhos e a simulação "ficou 20% abaixo da meta".</p>
+              <p class="entrega"><strong>Você sai com:</strong> 6 a 10 objetivos com indicador e meta, 3 fichas completas e o painel de controle.</p>
+            </div>
+            <div class="recursos">
+              <a class="rec rec-leitura" href="guias/05-objetivos-indicadores-farois.html"><span class="rec-ico">📖</span><span class="rec-txt"><span class="rec-tipo">Guia 05</span><span class="rec-nome">Objetivos, indicadores e faróis</span></span></a>
+              <a class="rec rec-atividade" href="folhas/bloco4.html"><span class="rec-ico">✎</span><span class="rec-txt"><span class="rec-tipo">Folhas 5A e 5B</span><span class="rec-nome">Objetivos, indicadores e painel de controle</span><span class="rec-status" data-status="bloco4">Não iniciada</span></span></a>
+              <a class="rec-ex" href="folhas/bloco4.html?exemplo">◎ Ver as folhas preenchidas pela AgroSense</a>
+            </div>
+          </article>
+        </li>
+        <li class="etapa" data-pagina="bloco5">
+          <span class="marco">F6<small>Bloco 5</small></span>
+          <article class="etapa-card">
+            <div>
+              <div class="etapa-aula">Bloco 5 · Ações</div>
+              <h4>Ações que movem os indicadores</h4>
+              <p class="desc">Iniciativas com começo e fim, o teste da alavanca, a priorização por impacto e esforço e o mínimo de cada ação: quem, até quando, quanto custa. Menos é mais.</p>
+              <p class="entrega"><strong>Você sai com:</strong> as ações priorizadas e vinculadas a cada objetivo.</p>
+            </div>
+            <div class="recursos">
+              <a class="rec rec-leitura" href="guias/06-acoes.html"><span class="rec-ico">📖</span><span class="rec-txt"><span class="rec-tipo">Guia 06</span><span class="rec-nome">Ações que movem indicadores</span></span></a>
+              <a class="rec rec-atividade" href="folhas/bloco5.html"><span class="rec-ico">✎</span><span class="rec-txt"><span class="rec-tipo">Folha 6</span><span class="rec-nome">Ações priorizadas</span><span class="rec-status" data-status="bloco5">Não iniciada</span></span></a>
+              <a class="rec-ex" href="folhas/bloco5.html?exemplo">◎ Ver a folha preenchida pela AgroSense</a>
+            </div>
+          </article>
+        </li>
+        <li class="etapa" data-pagina="fechamento">
+          <span class="marco">✓<small>Fecham.</small></span>
+          <article class="etapa-card">
+            <div>
+              <div class="etapa-aula">Fechamento · Tarefa para a Aula 2</div>
+              <h4>A cadeia fecha?</h4>
+              <p class="desc">Um objetivo lido em voz alta, da direção à ação. Onde a cadeia quebra, é ali que se ajusta. Depois, o que levantar antes da Aula 2, com a lista do que ainda falta no caderno.</p>
+              <p class="entrega"><strong>Você sai com:</strong> o caderno das Folhas 0 a 6 salvo em arquivo e a tarefa clara.</p>
+            </div>
+            <div class="recursos">
+              <a class="rec rec-leitura" href="guias/00-guia-de-uso.html#a-logica-do-caderno-uma-cadeia-so"><span class="rec-ico">📖</span><span class="rec-txt"><span class="rec-tipo">Guia de uso</span><span class="rec-nome">A lógica do caderno: uma cadeia só</span></span></a>
+              <a class="rec rec-atividade" href="folhas/fechamento.html"><span class="rec-ico">✎</span><span class="rec-txt"><span class="rec-tipo">Fechamento</span><span class="rec-nome">Leitura da cadeia e tarefa</span><span class="rec-status" data-status="fechamento">Não iniciada</span></span></a>
+            </div>
+          </article>
+        </li>
+      </ol>
+
+      <div class="aula-cab"><b>2</b><h3>Aula 2 · Do plano ao sistema</h3><span>organizar a estratégia na lógica do BSC e lançá-la na ferramenta do parque</span></div>
+      <ol class="etapas">
+        <li class="etapa" data-pagina="bloco6">
+          <span class="marco">F7<small>Bloco 6</small></span>
+          <article class="etapa-card">
+            <div>
+              <div class="etapa-aula">Retomada e Bloco 6 · BSC e mapa estratégico</div>
+              <h4>A estratégia numa página</h4>
+              <p class="desc">O que mudou desde a Aula 1; as quatro perspectivas; cada objetivo no seu lugar; as setas de causa e efeito lidas como "se… então…"; e o teste do equilíbrio, que mostra o que falta antes do sistema.</p>
+              <p class="entrega"><strong>Você sai com:</strong> o mapa estratégico desenhado e a conferência "pronto para o sistema".</p>
+            </div>
+            <div class="recursos">
+              <a class="rec rec-leitura" href="guias/07-bsc-mapa-estrategico.html"><span class="rec-ico">📖</span><span class="rec-txt"><span class="rec-tipo">Guia 07</span><span class="rec-nome">BSC e mapa estratégico</span></span></a>
+              <a class="rec rec-atividade" href="folhas/bloco6.html"><span class="rec-ico">✎</span><span class="rec-txt"><span class="rec-tipo">Folha 7</span><span class="rec-nome">Mapa estratégico</span><span class="rec-status" data-status="bloco6">Não iniciada</span></span></a>
+              <a class="rec-ex" href="folhas/bloco6.html?exemplo">◎ Ver o mapa da AgroSense</a>
+            </div>
+          </article>
+        </li>
+        <li class="etapa">
+          <span class="marco">★<small>Sistema</small></span>
+          <article class="etapa-card">
+            <div>
+              <div class="etapa-aula">Lançamento no sistema do parque</div>
+              <h4>Do caderno ao sistema</h4>
+              <p class="desc">Conduzido pelo facilitador. O caderno completo abre com um resumo por perspectiva (objetivo, indicador, meta, faróis, gatilhos e ações), na ordem em que tudo será digitado no sistema.</p>
+              <p class="entrega"><strong>Você sai com:</strong> o plano lançado no sistema e o caderno completo em PDF.</p>
+            </div>
+            <div class="recursos">
+              <a class="rec rec-doc" href="caderno.html"><span class="rec-ico">▤</span><span class="rec-txt"><span class="rec-tipo">Documento</span><span class="rec-nome">Caderno completo e resumo para o sistema</span><span class="rec-status">Pronto para salvar em PDF</span></span></a>
+              <a class="rec-ex" href="caderno.html?exemplo">◎ Ver o caderno completo da AgroSense</a>
+            </div>
+          </article>
+        </li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span><strong>Da Análise ao Plano</strong> · Workshop de planejamento estratégico para empresas de base tecnológica</span>
+    <span><a href="guias/00-guia-de-uso.html">Guia de uso</a> · <button type="button" id="rodapeAjuda">Como funciona o caderno</button></span>
+  </div>
+</footer>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/exemplo-agrosense.js"></script>
+<script src="assets/js/portal.js"></script>
+<script src="assets/js/folhas.js"></script>
+<script src="assets/js/motor.js"></script>
+<script>
+(function () {
+  WS.iniciarPagina();
+  document.getElementById('btnComo').onclick = function () { WS.abrirInstrucoes(); };
+  document.getElementById('rodapeAjuda').onclick = function () { WS.abrirInstrucoes(); };
+  if (location.hash === '#ajuda') WS.abrirInstrucoes();
+
+  var esc = WS.esc, F = WS_F, P = F.PAGINAS;
+  function render() {
+    var c = WS.campos(), st = {};
+    F.ORDEM.forEach(function (id) { st[id] = WS_M.status(id, c); });
+    var card = document.getElementById('cadernoCard');
+    if (!WS.temDados()) {
+      card.innerHTML =
+        '<div class="eyebrow">Seu caderno</div>' +
+        '<h2>Comece pela Folha 0</h2>' +
+        '<p>Uma empresa por caderno. Se vocês são 2 ou 3 da mesma empresa, combinem quem digita; os outros acompanham e discutem.</p>' +
+        '<div class="sessao-acoes"><a class="vd-btn vd-btn-amarelo" href="folhas/abertura.html">Começar o caderno</a>' +
+        '<button type="button" class="vd-btn vd-btn-claro" id="btnAbrir">Abrir um arquivo salvo</button></div>' +
+        '<p class="priv">Fica só neste computador. Na Aula 2, abra o arquivo que vocês salvaram na Aula 1.</p>';
+    } else {
+      var e = WS.estado();
+      var prox = F.ORDEM.filter(function (id) { return st[id].estado !== 'pronta'; })[0];
+      card.innerHTML =
+        '<div class="eyebrow">Seu caderno</div>' +
+        '<h2>' + (WS.empresa() ? esc(WS.empresa()) : 'Caderno sem nome') + '</h2>' +
+        '<ul class="progresso">' + F.ORDEM.map(function (id) {
+          return '<li class="' + st[id].estado + '"><a href="folhas/' + id + '.html">' + esc(P[id].codigo) + ' · ' + esc(P[id].titulo.split(':')[0]) + '</a><span>' + esc(st[id].texto.replace(/ · lista.*/, '')) + '</span></li>';
+        }).join('') + '</ul>' +
+        '<div class="sessao-acoes"><a class="vd-btn vd-btn-amarelo" href="' + (prox ? 'folhas/' + prox + '.html' : 'caderno.html') + '">Continuar</a>' +
+        '<button type="button" class="vd-btn vd-btn-claro" id="btnSalvar">⤓ Salvar arquivo</button>' +
+        '<button type="button" class="vd-btn vd-btn-claro" id="btnAbrir">Abrir outro arquivo</button></div>' +
+        '<p class="priv">' + esc(e.texto) + '. Ninguém mais recebe estas respostas.</p>';
+      document.getElementById('btnSalvar').onclick = function () { WS.salvarArquivo(); render(); };
+    }
+    document.getElementById('btnAbrir').onclick = function () { WS.abrirArquivo(); };
+    document.querySelectorAll('[data-status]').forEach(function (el) {
+      var s = st[el.dataset.status];
+      el.className = 'rec-status ' + s.estado;
+      el.textContent = s.texto;
+    });
+    document.querySelectorAll('.etapa[data-pagina]').forEach(function (li) {
+      li.classList.remove('pronta', 'andamento');
+      var s = st[li.dataset.pagina];
+      if (s.estado !== 'vazia') li.classList.add(s.estado);
+    });
+  }
+  WS.onMudanca(render);
+  render();
+})();
+</script>
+</body>
+</html>

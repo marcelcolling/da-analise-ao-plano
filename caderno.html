@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caderno completo — Da Análise ao Plano</title>
+<!-- Junta todas as folhas num documento único, com o resumo para o sistema do parque, pronto para salvar em PDF. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/portal.css">
+<link rel="stylesheet" href="assets/css/folha.css">
+<style>
+  .plano-barra { background: var(--az); color: #fff; padding: 1.6rem 0 1.4rem; }
+  .plano-barra h1 { font-family: var(--display); font-size: clamp(1.6rem, 3.5vw, 2.2rem); margin: 0.7rem 0 0.4rem; }
+  .plano-barra p { margin: 0 0 1rem; color: rgba(255,255,255,0.78); max-width: 92ch; }
+  .plano-folha { background: #fff; border: 1px solid var(--az-linha); border-radius: 20px; padding: clamp(1.2rem, 4vw, 2.6rem); margin: 1.8rem auto 4rem; max-width: 1000px; box-shadow: 0 20px 50px -40px rgba(21,42,69,0.6); }
+  .plano-aviso { background: var(--am-tint); border-radius: 12px; padding: 0.8rem 1rem; margin: 1.8rem auto 0; max-width: 1000px; font-size: 0.9rem; }
+  @media print {
+    .plano-barra, .plano-aviso, .vd-topbar { display: none !important; }
+    .plano-folha { border: none; box-shadow: none; padding: 0; margin: 0; max-width: none; }
+  }
+</style>
+</head>
+<body>
+<header class="plano-barra">
+  <div class="e-wrap">
+    <span class="e-tag"><i></i>Caderno de Estratégia · Folhas 0 a 7</span>
+    <h1>Caderno completo</h1>
+    <p>Todas as folhas num documento só. Começa pelo resumo para o sistema do parque: os objetivos organizados por perspectiva, cada um com indicador, meta, faróis, gatilhos e ações, na ordem em que você vai digitar.</p>
+    <div class="e-acoes">
+      <button type="button" class="vd-btn vd-btn-amarelo" id="btnPdf">Salvar o caderno em PDF</button>
+      <button type="button" class="vd-btn vd-btn-claro" id="btnArquivo">⤓ Salvar arquivo (.json)</button>
+      <a class="vd-btn vd-btn-claro" href="index.html#trilha">Voltar à trilha</a>
+    </div>
+  </div>
+</header>
+<p class="plano-aviso e-wrap" id="aviso" hidden></p>
+<div class="plano-folha plano-doc" id="doc"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/exemplo-agrosense.js"></script>
+<script src="assets/js/portal.js"></script>
+<script src="assets/js/folhas.js"></script>
+<script src="assets/js/motor.js"></script>
+<script>
+(function () {
+  WS.iniciarPagina({ crumb: 'Caderno completo' });
+  var doc = document.getElementById('doc'), aviso = document.getElementById('aviso');
+  function render() {
+    WS_M.caderno(doc, WS.campos());
+    aviso.hidden = WS.temDados();
+    if (!WS.temDados()) aviso.innerHTML = 'Este navegador ainda não tem um caderno. Comece pela <a href="folhas/abertura.html">Folha 0</a> ou abra o arquivo que vocês salvaram. <button type="button" class="vd-btn vd-btn-roxo" id="btnAbrir" style="margin-left:0.6rem;padding:0.45rem 0.9rem">Abrir arquivo</button>';
+    var b = document.getElementById('btnAbrir');
+    if (b) b.onclick = function () { WS.abrirArquivo(); };
+  }
+  WS.onMudanca(render);
+  render();
+  window.addEventListener('beforeprint', render);
+  document.getElementById('btnPdf').onclick = function () { render(); window.print(); };
+  document.getElementById('btnArquivo').onclick = function () { WS.salvarArquivo(); };
+})();
+</script>
+</body>
+</html>

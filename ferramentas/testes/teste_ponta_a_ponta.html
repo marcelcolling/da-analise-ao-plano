@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>teste</title></head>
+<body>
+<pre id="log">rodando</pre>
+<iframe id="fr" style="width:1200px;height:900px"></iframe>
+<script>
+/* Teste de ponta a ponta do portal "Da Análise ao Plano" (rodar com rodar_testes.ps1).
+   Abre as páginas reais num iframe (mesma origem: o localStorage é o mesmo) e confere salvamento,
+   referências entre folhas, cálculos, arquivo .json, modo exemplo, PDF, caderno completo e apagar. */
+const log = [];
+const ok = (c, m) => { log.push((c ? 'PASS ' : 'FAIL ') + m); document.getElementById('log').textContent = log.join('\n') + '\n(em andamento)'; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fr = document.getElementById('fr');
+const carregar = url => new Promise(r => {
+  fr.onload = async () => {
+    const w = fr.contentWindow; w.alert = () => {}; w.confirm = () => true;
+    for (let i = 0; i < 120 && !(w.WS && w.document.querySelector('.vd-topbar')); i++) await sleep(250);
+    await sleep(400);
+    r(w);
+  };
+  fr.src = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+});
+const XSS = '<img src=x onerror="window.__xss=1">';
+const q = (w, s) => w.document.querySelector(s);
+const k = (w, chave) => q(w, '[data-k="' + chave + '"]');
+const digitar = (w, chave, v) => { const el = k(w, chave); el.value = v; el.dispatchEvent(new w.Event('input', { bubbles: true })); el.dispatchEvent(new w.Event('change', { bubbles: true })); };
+const marcar = (w, chave) => { const el = k(w, chave); el.checked = true; el.dispatchEvent(new w.Event('change', { bubbles: true })); };
+const semXss = w => !w.__xss && !w.document.querySelector('img[src="x"]');
+const caderno = () => JSON.parse(localStorage.getItem('ws_caderno_v1') || '{"campos":{}}');
+const salvo = async (w) => { w.WS_PAGINA.salvarAgora(); await sleep(100); return caderno().campos; };
+
+(async () => {
+  try {
+    localStorage.clear();
+    // os outros portais do professor ficam no mesmo domínio: os dados deles não podem aparecer aqui
+    localStorage.setItem('pm_dados_v1::grupo', JSON.stringify({ e1: { data: { campos: { b1_x: 'outro' } } } }));
+    localStorage.setItem('pe_sessao_v1', JSON.stringify({ id: 'porter', nome: 'Porter' }));
+    localStorage.setItem('vd_sessao_v1', JSON.stringify({ id: 'vieses', nome: 'Vieses' }));
+
+    /* ---- página inicial vazia ---- */
+    let w = await carregar('/index.html');
+    ok(!w.WS.temDados() && q(w, '#cadernoCard').textContent.includes('Comece pela Folha 0'), 'início: caderno vazio, sem herdar dados dos outros portais');
+    ok(w.document.querySelectorAll('[data-status]').length === 8 && q(w, '[data-status="bloco4"]').textContent === 'Não iniciada', 'início: as 8 etapas com estado "Não iniciada"');
+    ok(q(w, '.vd-status').dataset.estado === 'local', 'barra: caderno vazio');
+
+    /* ---- Folha 0: salvamento automático, XSS e recarga ---- */
+    w = await carregar('/folhas/abertura.html');
+    ok(w.document.querySelectorAll('.e-secao').length === 4 && k(w, 'f0_empresa'), 'Folha 0 montada a partir da especificação');
+    ok(!!q(w, 'details.ex'), 'Folha 0: tem o botão "Ver como a AgroSense fez"');
+    digitar(w, 'f0_empresa', 'Teste ' + XSS);
+    digitar(w, 'f0_hoje_que', 'vende software');
+    marcar(w, 'f0_chk1');
+    await sleep(1200);
+    let c = caderno().campos;
+    ok(c.f0_empresa === 'Teste ' + XSS && c.f0_chk1 === true && c.f0_hoje_que === 'vende software', 'Folha 0: salvamento automático no navegador (texto e caixa)');
+    ok(q(w, '.vd-status').dataset.estado === 'pendente' && q(w, '.vd-status').textContent.includes('falta o arquivo'), 'barra: avisa que falta salvar o arquivo');
+    ok(q(w, '#empresaMeta').textContent.includes('Teste'), 'Folha 0: nome da empresa no topo');
+    const d = q(w, 'details.ex'); d.open = true; d.dispatchEvent(new w.Event('toggle')); await sleep(200);
+    ok(q(w, 'details.ex .ex-corpo').textContent.includes('AgroSense'), 'exemplo da AgroSense aparece na seção');
+    ok(semXss(w), 'Folha 0: nenhum HTML injetado');
+    w = await carregar('/folhas/abertura.html');
+    ok(k(w, 'f0_empresa').value === 'Teste ' + XSS && k(w, 'f0_chk1').checked, 'Folha 0: respostas voltam ao recarregar');
+    ok(semXss(w), 'Folha 0 recarregada: nenhum HTML injetado');
+
+    /* ---- Folhas 1 e 2 ---- */
+    w = await carregar('/folhas/bloco1.html');
+    digitar(w, 'f1_f1', 'Base de dados ' + XSS);
+    digitar(w, 'f1_o1', 'Crédito rural');
+    digitar(w, 'f2_fo1', 'Criar pacote financiável');
+    await sleep(300);
+    ok(q(w, '.esp-radar').textContent.includes('Base de dados') && q(w, '.esp-radar').textContent.includes('Crédito rural'), 'TOWS: o radar da Folha 1 aparece para cruzar');
+    ok(semXss(w), 'Folhas 1 e 2: nenhum HTML injetado');
+    c = await salvo(w);
+    ok(c.f2_fo1 === 'Criar pacote financiável' && c.f0_empresa, 'Folhas 1 e 2 salvas sem apagar a Folha 0');
+
+    /* ---- Folhas 3A e 3B ---- */
+    w = await carregar('/folhas/bloco2.html');
+    digitar(w, 'f3a_operacao_est', 'Entender');
+    marcar(w, 'f3a_operacao_garg');
+    await sleep(200);
+    ok(q(w, '.mat tr.mat-garg td.atual') && k(w, 'f3a_operacao_prox').placeholder.includes('Estruturar'), 'Matriz: estágio marcado, gargalo e dica do próximo estágio');
+    q(w, '[data-trazer]').click();
+    await sleep(200);
+    ok(k(w, 'f3b_pos').value === 'Criar pacote financiável', '"Trazer" leva a direção FO da Folha 2 para o posicionamento');
+    ['Venda via cooperativa', 'Implantação em lote', 'Agrônomo dedicado', 'Relatório mensal'].forEach((t, i) => digitar(w, 'f3b_at' + (i + 1), t + (i === 0 ? ' ' + XSS : '')));
+    digitar(w, 'f3b_at1_liga', '2, 4'); digitar(w, 'f3b_at2_liga', '1, 3'); digitar(w, 'f3b_at3_liga', '9');
+    await sleep(300);
+    ok(w.document.querySelectorAll('.svg-sistema .s-ativ').length === 4 && w.document.querySelectorAll('.svg-sistema .s-liga').length === 3, 'sistema de atividades desenhado: 4 caixas e 3 ligações (sem repetir pares nem ligar ao inexistente)');
+    ok(semXss(w), 'Folhas 3A e 3B: nenhum HTML injetado (inclusive no SVG)');
+
+    /* ---- Folha 4 ---- */
+    w = await carregar('/folhas/bloco3.html');
+    digitar(w, 'f4_bcg1_item', 'Plataforma'); digitar(w, 'f4_bcg1_merc', 'Rápido'); digitar(w, 'f4_bcg1_pos', 'Forte');
+    digitar(w, 'f4_ans_vetor', 'Diversificação');
+    await sleep(300);
+    ok(k(w, 'f4_bcg1_quad').value === '⭐ Estrela' && q(w, '.q2-bcg').textContent.includes('Plataforma'), 'BCG: quadrante calculado e item no gráfico');
+    ok(q(w, '.esp-ansoff').textContent.includes('Entender'), 'Ansoff: alerta quando a operação está em "Entender" e o vetor é arriscado');
+    c = await salvo(w);
+    ok(c.f4_bcg1_quad === '⭐ Estrela', 'BCG: quadrante calculado vai para o caderno');
+    ok(q(w, '[data-espelho="f3a_estrategia_est"]').classList.contains('vazio') && q(w, '[data-espelho="f3b_tradeoff"]').textContent.includes('Folha 3B'), 'Folha 4: espelhos avisam quando a folha de origem ainda está vazia');
+
+    /* ---- Folhas 5A e 5B ---- */
+    w = await carregar('/folhas/bloco4.html');
+    ok(q(w, '.esp-direcoes').textContent.includes('Criar pacote financiável') && q(w, '.esp-direcoes').textContent.includes('Gargalo: Operação'), '5A: direções das folhas anteriores reunidas (com o gargalo)');
+    digitar(w, 'f5a_o1_obj', 'Aumentar receita recorrente'); digitar(w, 'f5a_o1_tipo', 'POS'); digitar(w, 'f5a_o1_ind', '% recorrente');
+    digitar(w, 'f5a_o2_obj', 'Reduzir implantação ' + XSS); digitar(w, 'f5a_o2_tipo', 'EO'); marcar(w, 'f5a_o2_garg');
+    await sleep(300);
+    const opts = Array.from(k(w, 'f5a_fc1_obj').options).map(o => o.textContent);
+    ok(opts.length === 3 && opts[1].startsWith('1 · Aumentar'), 'fichas: lista de objetivos vem da tabela da 5A');
+    ok(q(w, '.esp-validador').textContent.includes('hoje: 2') && q(w, '.esp-validador .chk-auto.alerta'), 'validador: conta objetivos e aponta o que falta');
+    digitar(w, 'f5a_fc1_obj', '1'); digitar(w, 'f5a_fc1_nome', 'MRR'); digitar(w, 'f5a_fc1_unidade', 'R$'); digitar(w, 'f5a_fc1_pol', 'Quanto maior, melhor');
+    digitar(w, 'f5b_p1_meta', '60.000'); digitar(w, 'f5b_p1_tol', '15'); digitar(w, 'f5b_p1_sim', '49 mil');
+    await sleep(300);
+    const farol = q(w, '.esp-farol').textContent;
+    ok(farol.includes('R$ 60.000') && farol.includes('R$ 51.000') && q(w, '.farol-sim.fx-vermelho'), 'farol: faixas-padrão calculadas (R$ 60.000 / R$ 51.000) e simulação 49 mil = vermelho');
+    digitar(w, 'f5a_fc2_obj', '2'); digitar(w, 'f5a_fc2_nome', 'Dias'); digitar(w, 'f5a_fc2_pol', 'Quanto menor, melhor'); digitar(w, 'f5b_p2_meta', '14');
+    await sleep(300);
+    ok(q(w, '.esp-simulacao').textContent.includes('20% acima') && q(w, '.esp-simulacao').textContent.includes('16,8'), 'simulação de 20%: "menor, melhor" vira 20% acima (16,8)');
+    ok(semXss(w), 'Folhas 5A e 5B: nenhum HTML injetado');
+    c = await salvo(w);
+    ok(c.f5b_p1_verde === '≥ R$ 60.000' && c.f5b_p1_vermelho === '< R$ 51.000', 'faixas calculadas vão para o caderno');
+    ok(!('f5b_p3_verde' in c), 'painel sem meta não grava faixas vazias');
+
+    /* ---- Folha 6 ---- */
+    w = await carregar('/folhas/bloco5.html');
+    digitar(w, 'f6_a1_obj', '1'); digitar(w, 'f6_a1_acao', 'Plano anual ' + XSS); digitar(w, 'f6_a1_imp', 'A'); digitar(w, 'f6_a1_esf', 'B');
+    await sleep(300);
+    ok(k(w, 'f6_a1_prio').value === 'Fazer já' && q(w, '.q2-prio .q-a').textContent.includes('Plano anual'), 'ações: prioridade calculada e matriz impacto × esforço');
+    ok(!q(w, 'tr[data-se]').hidden && q(w, 'tr[data-se]:nth-of-type(2)').hidden, 'detalhamento: só aparecem as linhas das ações escritas');
+    ok(q(w, '.esp-priorizacao').textContent.includes('sem ação: 2'), 'conferência: objetivo sem ação apontado');
+    ok(semXss(w), 'Folha 6: nenhum HTML injetado');
+    c = await salvo(w);
+    ok(c.f6_a1_prio === 'Fazer já' && c.f5a_o1_obj && c.f5b_p1_verde, 'Folha 6 salva sem apagar as Folhas 5A e 5B');
+
+    /* ---- Fechamento ---- */
+    w = await carregar('/folhas/fechamento.html');
+    digitar(w, 'fc_obj', '1'); await sleep(300);
+    const cad = q(w, '.esp-cadeia').textContent;
+    ok(cad.includes('Aumentar receita recorrente') && cad.includes('Plano anual') && q(w, '.elo.quebra'), 'leitura da cadeia: monta a cadeia do objetivo e mostra onde quebra');
+    ok(q(w, '.esp-pendencias').textContent.includes('Fichas de indicador'), 'tarefa: lista o que ainda falta');
+
+    /* ---- Folha 7 ---- */
+    w = await carregar('/folhas/bloco6.html');
+    const linhas = Array.from(w.document.querySelectorAll('#s-perspectivas tr[data-se]'));
+    ok(linhas.filter(t => !t.hidden).length === 2 && linhas.length === 10, 'mapa: só os objetivos existentes aparecem para classificar');
+    digitar(w, 'f7_o1_persp', 'fin'); digitar(w, 'f7_o2_persp', 'pro'); digitar(w, 'f7_o2_leva', '1');
+    await sleep(300);
+    ok(w.document.querySelectorAll('.svg-mapa .m-obj').length === 2 && w.document.querySelectorAll('.svg-mapa .m-seta').length === 1, 'mapa estratégico desenhado: 2 objetivos e 1 seta');
+    const eq = q(w, '.esp-mapa').textContent;
+    ok(eq.includes('Perspectiva vazia') && eq.includes('1 objetivo(s) de POS'), 'teste do equilíbrio: perspectivas vazias e poucos POS');
+    ok(q(w, '.esp-prontidao .pronto-cab') && !q(w, '.esp-prontidao .pronto-cab.ok'), 'pronto para o sistema: ainda não');
+    ok(semXss(w), 'Folha 7: nenhum HTML injetado (inclusive no SVG)');
+
+    /* ---- PDF de uma folha ---- */
+    w = await carregar('/folhas/bloco4.html');
+    w.dispatchEvent(new w.Event('beforeprint')); await sleep(200);
+    const rel = q(w, '#relatorio');
+    ok(rel.parentNode === w.document.body && rel.textContent.includes('Aumentar receita recorrente') && rel.textContent.includes('R$ 51.000'), 'PDF da folha: respostas e faixas do farol');
+    ok(!rel.textContent.includes('Sua folha está pronta') && !rel.textContent.includes('Simulador') && !rel.textContent.includes('Mão na massa'), 'PDF da folha: sem lista final, simulador nem orientações');
+    ok(semXss(w), 'PDF: nenhum HTML injetado');
+
+    /* ---- arquivo: salvar ---- */
+    let baixado = null;
+    w.HTMLAnchorElement.prototype.click = function () { baixado = { nome: this.download, href: this.href }; };
+    w.WS.salvarArquivo(); await sleep(300);
+    const texto = baixado ? await (await w.fetch(baixado.href)).text() : '{}';
+    const arq = JSON.parse(texto);
+    ok(baixado && /^caderno-estrategia-teste-.*\d{4}-\d{2}-\d{2}\.json$/.test(baixado.nome), 'Salvar arquivo: nome com a empresa e a data');
+    ok(arq.formato === 'caderno-estrategia' && arq.campos.f6_a1_prio === 'Fazer já' && arq.campos.f0_chk1 === true, 'arquivo .json com o caderno inteiro');
+    ok(q(w, '.vd-status').dataset.estado === 'ok', 'barra: navegador e arquivo em dia');
+    digitar(w, 'f5a_o3_obj', 'Mais um'); await sleep(900);
+    ok(q(w, '.vd-status').dataset.estado === 'pendente', 'barra: alteração depois do arquivo volta a pedir para salvar');
+
+    /* ---- arquivo: ler (validação) ---- */
+    ok(w.WS.lerConteudo('isto não é json').erro && w.WS.lerConteudo('{"formato":"outra-coisa","campos":{}}').erro && w.WS.lerConteudo('{"a":1}').erro, 'Abrir arquivo: recusa arquivo inválido ou de outra ferramenta');
+    const r = w.WS.lerConteudo(JSON.stringify({ formato: 'caderno-estrategia', campos: { f0_empresa: 'X', 'chave ruim<': 'y', f0_obj: { a: 1 }, f0_n: 5 } }));
+    ok(r.campos.f0_empresa === 'X' && !('chave ruim<' in r.campos) && !('f0_obj' in r.campos) && r.campos.f0_n === '5', 'Abrir arquivo: filtra chaves e valores estranhos');
+
+    /* ---- arquivo: abrir (substitui o caderno) ---- */
+    w.WS.aplicarArquivo(w.WS.lerConteudo(JSON.stringify(arq)));
+    await sleep(300);
+    ok(caderno().campos.f6_a1_prio === 'Fazer já' && !caderno().campos.f5a_o3_obj && k(w, 'f5a_o3_obj').value === '', 'Abrir arquivo: o caderno volta como estava no arquivo (inclusive na página aberta)');
+    ok(q(w, '.vd-status').dataset.estado === 'ok', 'depois de abrir o arquivo, navegador e arquivo em dia');
+
+    /* ---- página inicial com caderno ---- */
+    w = await carregar('/index.html');
+    ok(q(w, '#cadernoCard h2').textContent.startsWith('Teste') && q(w, '[data-status="bloco4"]').textContent.startsWith('Em andamento'), 'início: nome da empresa e etapas em andamento');
+    ok(semXss(w), 'início: nenhum HTML injetado');
+
+    /* ---- caderno completo ---- */
+    w = await carregar('/caderno.html');
+    ok(q(w, '#p-sistema') && q(w, '#p-sistema').textContent.includes('Aumentar receita recorrente') && q(w, '#p-bloco4'), 'caderno completo: resumo para o sistema e as folhas');
+    ok(semXss(w), 'caderno completo: nenhum HTML injetado');
+
+    /* ---- modo exemplo: não toca no caderno do navegador ---- */
+    const antes = localStorage.getItem('ws_caderno_v1');
+    w = await carregar('/folhas/bloco6.html?exemplo');
+    ok(w.WS.exemplo && q(w, '.ws-faixa-exemplo') && w.WS.campos().f0_empresa === 'AgroSense', 'modo exemplo: mostra a AgroSense com aviso');
+    ok(q(w, '.esp-prontidao .pronto-cab.ok'), 'exemplo da AgroSense passa em todos os critérios de "pronto para o sistema"');
+    ok(w.document.querySelectorAll('.svg-mapa .m-obj').length === 7 && w.document.querySelectorAll('.svg-mapa .m-seta').length === 5, 'mapa da AgroSense: 7 objetivos e 5 setas');
+    digitar(w, 'f7_ajustes', 'mudança no exemplo'); await sleep(900); w.WS_PAGINA.salvarAgora();
+    ok(localStorage.getItem('ws_caderno_v1') === antes, 'modo exemplo: nada é gravado no caderno do navegador');
+    w = await carregar('/caderno.html?exemplo');
+    ok(w.document.querySelectorAll('#p-sistema .r-obj').length === 7 && w.document.querySelectorAll('#p-sistema .r-persp').length === 4, 'caderno da AgroSense: 7 objetivos nas 4 perspectivas');
+    ok(q(w, '#p-bloco2 svg.svg-sistema') && q(w, '#p-bloco6 svg.svg-mapa'), 'caderno da AgroSense: desenhos do sistema de atividades e do mapa');
+    ok(w.WS_M.criterios(w.WS_M.completar(w.WS_EXEMPLO.campos)).every(x => x[0]), 'critérios de prontidão do exemplo: todos verdes');
+
+    /* ---- outra aba ---- */
+    w = await carregar('/folhas/bloco6.html');
+    const c2 = caderno(); c2.campos.f5a_o1_obj = 'Mudado em outra aba'; localStorage.setItem('ws_caderno_v1', JSON.stringify(c2));
+    w.dispatchEvent(new w.StorageEvent('storage', { key: 'ws_caderno_v1' })); await sleep(300);
+    ok(q(w, '#s-perspectivas').textContent.includes('Mudado em outra aba'), 'outra aba: a folha aberta acompanha a mudança');
+
+    /* ---- apagar ---- */
+    w.WS.apagar(); await sleep(150);
+    q(w, '.vd-modal [data-a=apagar]').click(); await sleep(200);
+    ok(!localStorage.getItem('ws_caderno_v1') && localStorage.getItem('pe_sessao_v1'), 'Apagar: remove só o caderno deste portal');
+    ok(k(w, 'f7_o1_persp').value === '' && !w.WS.temDados(), 'Apagar: a página aberta fica vazia');
+
+    log.push('FIM');
+  } catch (e) {
+    log.push('ERRO ' + (e && e.stack || e));
+  }
+  document.getElementById('log').textContent = log.join('\n');
+  document.title = 'FIM';
+})();
+</script>
+</body>
+</html>
