@@ -326,7 +326,7 @@ def gerar(cfg):
         kicker="" if re.fullmatch(r"\d+", rotulo or "0") else f'<p class="hero-kicker">{inline(rotulo)}</p>',
         selo=html.escape(cfg["selo"]), curto=html.escape(cfg["curto"]), etapa=html.escape(cfg["etapa"]),
         minutos=minutos, nav="\n  ".join(nav), corpo=corpo_html, url_f=url_f, nome_f=html.escape(nome_f),
-        rot_folha="Folha" if "folhas/" in url_f else "Comece por")
+        rot_folha="Para aplicar" if "folhas/" in url_f else "Comece por")
     destino = RAIZ / "guias" / cfg["destino"]
     destino.parent.mkdir(exist_ok=True)
     destino.write_text(pagina, encoding="utf-8", newline="\n")

@@ -97,7 +97,7 @@
     if (!mudou) return false;
     c.atualizado = Date.now();
     if (!gravar(c) && !EXEMPLO) toast('O navegador não deixou guardar as respostas. Use "Salvar arquivo" agora para não perder nada.');
-    atualizarStatus();
+    atualizarStatus(true);
     return true;
   }
 
@@ -239,7 +239,7 @@
         '</div>' +
         '<div class="vd-right">' +
           '<button type="button" class="vd-btn vd-btn-claro vd-ajuda" title="Como funciona o caderno"><span class="vd-ajuda-ico" aria-hidden="true">?</span><span class="vd-ajuda-txt">Como funciona</span></button>' +
-          '<span class="vd-status" data-estado="local"><span class="vd-status-txt"></span></span>' +
+          '<span class="vd-status" data-estado="local" role="status"><span class="vd-status-txt"></span><span class="vd-status-curto"></span></span>' +
           '<button type="button" class="vd-btn vd-btn-amarelo vd-salvar" data-ws-salvar title="Baixa o caderno inteiro num arquivo .json, no seu computador"><span aria-hidden="true">⤓</span><span class="vd-salvar-txt">Salvar arquivo</span></button>' +
           '<button type="button" class="vd-user" aria-haspopup="true" aria-expanded="false" title="Caderno: abrir, ver completo, apagar"><span class="vd-avatar" aria-hidden="true">≡</span><span class="vd-user-nome">Caderno</span></button>' +
           '<div class="vd-menu" hidden>' +
@@ -282,20 +282,26 @@
 
   function estadoCaderno() {
     var c = ler();
-    if (EXEMPLO) return { estado: 'exemplo', texto: 'Exemplo · nada é salvo' };
-    if (!armazenamentoOk) return { estado: 'erro', texto: 'Navegador sem armazenamento: salve o arquivo' };
-    if (!temDados(c)) return { estado: 'local', texto: 'Caderno vazio' };
+    if (EXEMPLO) return { estado: 'exemplo', texto: 'Exemplo · nada é salvo', curto: 'Exemplo' };
+    if (!armazenamentoOk) return { estado: 'erro', texto: 'Navegador sem armazenamento: salve o arquivo', curto: 'Salve o arquivo' };
+    if (!temDados(c)) return { estado: 'local', texto: 'Caderno vazio', curto: 'Vazio' };
     var emDia = c.arquivo && c.arquivo >= (c.atualizado || 0);
     return emDia
-      ? { estado: 'ok', texto: 'Salvo no navegador e no arquivo' }
-      : { estado: 'pendente', texto: 'Salvo no navegador · falta o arquivo' };
+      ? { estado: 'ok', texto: 'Salvo no navegador e no arquivo', curto: 'Salvo' }
+      : { estado: 'pendente', texto: 'Salvo no navegador · falta o arquivo', curto: 'Falta o arquivo' };
   }
-  function atualizarStatus() {
+  var tPulso = null;
+  function atualizarStatus(pulso) {
     if (!topbar) return;
     var st = estadoCaderno(), c = ler();
     var el = topbar.querySelector('.vd-status');
     el.dataset.estado = st.estado;
     el.querySelector('.vd-status-txt').textContent = st.texto;
+    el.querySelector('.vd-status-curto').textContent = st.curto;
+    if (pulso) {   // sinal discreto de que acabou de salvar no navegador
+      el.classList.remove('pulso'); void el.offsetWidth; el.classList.add('pulso');
+      clearTimeout(tPulso); tPulso = setTimeout(function () { el.classList.remove('pulso'); }, 1300);
+    }
     el.title = st.texto + (c.atualizado ? ' · última alteração ' + fmtHora(c.atualizado) : '') + (c.arquivo ? ' · arquivo baixado ' + fmtHora(c.arquivo) : '');
     var info = topbar.querySelector('.vd-menu-info');
     info.innerHTML = '<strong>' + (empresa(c) ? esc(empresa(c)) : 'Caderno de Estratégia') + '</strong>' +

@@ -221,3 +221,11 @@
   .vd-salvar-txt { display: none; }
   .vd-salvar { padding: 0.5rem 0.65rem; font-size: 1rem; }
 }
+
+/* status do caderno: texto curto no celular e sinal de "acabou de salvar" */
+.vd-status-curto { display: none; }
+.vd-status.pulso::before { animation: vd-pulso 1.2s ease-out; }
+@keyframes vd-pulso { 0% { box-shadow: 0 0 0 0 rgba(239,185,60,0.9); } 100% { box-shadow: 0 0 0 9px rgba(239,185,60,0); } }
+@media (max-width: 720px) { .vd-status .vd-status-curto { display: inline; font-size: 0.72rem; } }
+@media (max-width: 400px) { .vd-status .vd-status-curto { display: none; } }
+@media (prefers-reduced-motion: reduce) { .vd-status.pulso::before { animation: none; } }

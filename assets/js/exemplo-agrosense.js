@@ -81,7 +81,7 @@ window.WS_EXEMPLO = {
     f4_chk1: true, f4_chk2: true, f4_chk3: true, f4_chk4: true,
 
     /* Folha 5A */
-    f5a_o1_obj: 'Aumentar a participação da receita recorrente', f5a_o1_tipo: 'POS', f5a_o1_ind: '% da receita que é recorrente', f5a_o1_base: '30%', f5a_o1_meta: '55%', f5a_o1_prazo: 'dez/2027',
+    f5a_o1_obj: 'Aumentar a participação da receita recorrente', f5a_o1_tipo: 'POS', f5a_o1_ind: '% da receita que é recorrente (acompanhada mês a mês pela receita recorrente mensal, MRR)', f5a_o1_base: '30%', f5a_o1_meta: '55%', f5a_o1_prazo: 'dez/2027',
     f5a_o2_obj: 'Implantar a gestão orçamentária', f5a_o2_tipo: 'EO', f5a_o2_garg: true, f5a_o2_ind: 'Desvio entre orçado e realizado', f5a_o2_base: 'Sem orçamento', f5a_o2_meta: '≤ 10%', f5a_o2_prazo: 'a partir de jun/2027',
     f5a_o3_obj: 'Conquistar cooperativas como clientes-âncora', f5a_o3_tipo: 'POS', f5a_o3_ind: 'Nº de cooperativas com contrato anual', f5a_o3_ind2: 'Demonstrações para cooperativas por mês (de 1 para 4 a partir de fev/2027)', f5a_o3_base: '2', f5a_o3_meta: '6', f5a_o3_prazo: 'dez/2027',
     f5a_o4_obj: 'Reter as cooperativas atendidas', f5a_o4_tipo: 'POS', f5a_o4_ind: 'Taxa de renovação contratual', f5a_o4_base: '100% (2 de 2)', f5a_o4_meta: '≥ 90%', f5a_o4_prazo: 'contínuo',

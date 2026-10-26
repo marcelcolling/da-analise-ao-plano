@@ -406,3 +406,104 @@ ol.cadeia { list-style: none; margin: 0.3rem 0 1rem; padding: 0; display: grid; 
   .r-sistema + .r-entrega { break-before: page; }
 }
 .r-tab-num tbody th { width: 2.2rem; text-align: center; }
+
+/* =========================================================
+   Revisão de experiência (out/2026)
+   ========================================================= */
+/* faixa "entenda · aplique · confira": compacta, uma linha no computador */
+.fluxo { gap: 0.5rem; margin-bottom: 1.4rem; }
+.fluxo li { align-items: center; padding: 0.55rem 0.8rem; border-radius: 12px; background: var(--papel-alt); }
+.fluxo-n { width: 24px; height: 24px; font-size: 0.82rem; }
+.fluxo li > span:last-child { font-size: 0.84rem; color: var(--ard); line-height: 1.4; }
+.fluxo b { display: inline; font-family: var(--body); font-size: inherit; color: var(--az); }
+
+/* cabeçalho da seção: "Folha 2 · passo 3 de 5" */
+.e-alimenta { letter-spacing: 0.06em; }
+.e-secao { scroll-margin-top: 120px; }
+
+/* linha de apoio: guia + exemplo lado a lado */
+.sec-apoio { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.5rem; margin: 0.1rem 0 1rem; }
+.sec-apoio .link-leitura { margin: 0; padding: 0.42rem 0.85rem; border-radius: 100px; }
+.sec-apoio details.ex { margin: 0; border-radius: 100px; }
+.sec-apoio details.ex > summary { padding: 0.32rem 0.8rem 0.32rem 0.45rem; font-size: 0.8rem; }
+.sec-apoio details.ex[open] { flex-basis: 100%; border-radius: 14px; }
+.sec-apoio details.ex[open] > summary { padding: 0.55rem 0.9rem; }
+.ex-ico { width: 22px; height: 22px; font-size: 0.72rem; }
+details.ex > summary:hover { color: var(--az); }
+details.ex > summary:focus-visible, .link-leitura:focus-visible { outline: 3px solid var(--am); outline-offset: 2px; }
+
+/* "mão na massa" um pouco mais leve */
+.passos { padding: 0.7rem 1rem 0.5rem; }
+.passos li { margin-bottom: 0.2rem; }
+
+/* tabelas: caixas mais baixas (crescem com o texto) e linhas que abrem conforme o uso */
+.tab td textarea { min-height: 48px; }
+.largo .tab td textarea { min-height: 52px; }
+.tab tr[hidden] { display: none !important; }
+.btn-linha { display: block; width: 100%; border: none; border-top: 1px dashed var(--az-linha); background: var(--papel-alt); color: var(--az); font-family: var(--body); font-weight: 600; font-size: 0.86rem; padding: 0.6rem; cursor: pointer; }
+.btn-linha:hover { background: var(--az-tint); }
+.btn-linha[hidden] { display: none; }
+.tab-vazia { margin: 0; padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--muted); font-style: italic; }
+.tab-wrap > table[hidden] { display: none; }
+textarea, input[type=text], select { transition: border-color .15s, background .15s; }
+textarea:hover, input[type=text]:hover, select:hover { border-color: rgba(31,58,95,0.32); }
+
+/* listas finais: itens conferidos pelo caderno × marcados à mão */
+.chk-lista li { position: relative; }
+.chk-lista label, .chk-conferido { display: flex; gap: 0.75rem; align-items: flex-start; flex-wrap: wrap; }
+.chk-conferido { background: var(--papel-alt); border: 1px dashed var(--az-linha); border-radius: 12px; padding: 0.7rem 0.9rem; font-size: 0.92rem; color: var(--muted); }
+.chk-conferido .chk-caixa { border-color: #b9c1cd; border-style: dashed; }
+.chk-conferido.ok { color: var(--tx); border-style: solid; border-color: rgba(47,143,95,0.35); background: rgba(47,143,95,0.07); }
+.chk-conferido.ok .chk-caixa { background: var(--ok); border: 2px solid var(--ok); }
+.chk-conferido.ok .chk-caixa::after { content: '✓'; color: #fff; font-size: 0.85rem; font-weight: 700; }
+.chk-lista li > label > span:nth-of-type(2), .chk-conferido > span:nth-of-type(2) { flex: 1; min-width: 12rem; }
+.chk-tag { font-style: normal; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); align-self: center; }
+.chk-tag-mao { color: var(--am-ink); }
+
+/* fim da folha: estado + salvar + próximo */
+.proximo { display: flex; justify-content: space-between; align-items: center; gap: 1rem 1.5rem; flex-wrap: wrap; background: var(--az); color: #fff; border-radius: 20px; padding: 1.2rem 1.4rem; margin: 2rem 0 0; position: relative; overflow: hidden; }
+.proximo::before { content: ''; position: absolute; right: -50px; top: -70px; width: 180px; height: 180px; border-radius: 50%; border: 2px solid rgba(239,185,60,0.22); }
+.proximo-rot { display: block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--am); }
+.proximo p { margin: 0.2rem 0 0; font-size: 0.95rem; color: rgba(255,255,255,0.85); }
+.proximo p.ok { color: #9fe7c2; font-weight: 600; }
+.proximo-acoes { display: flex; gap: 0.6rem; flex-wrap: wrap; position: relative; z-index: 1; }
+.proximo .vd-btn { padding: 0.7rem 1.1rem; }
+.proximo .vd-btn-roxo { background: var(--am); color: var(--az-deep); }
+.proximo .vd-btn-roxo:hover { background: #f5c968; }
+.proximo .vd-btn-ghost { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.35); }
+.e-rodape { margin-top: 1rem; padding-top: 0.9rem; font-weight: 500; font-size: 0.84rem; }
+.e-rodape a { color: var(--ard); }
+.e-rodape a:hover { color: var(--az); }
+
+@media (max-width: 760px) {
+  /* no celular, cada linha de tabela vira um cartão com nome ("Objetivo 3") */
+  .lin-rot[data-item]::before { content: attr(data-item) ' '; }
+  .tab-num tbody th { text-align: left; padding-left: 0.75rem; }
+  .fluxo li { padding: 0.45rem 0.7rem; }
+  .proximo { padding: 1rem 1.1rem; }
+  .proximo-acoes, .proximo-acoes .vd-btn { width: 100%; }
+  .chk-tag { flex-basis: 100%; padding-left: 2.1rem; }
+}
+@media (prefers-reduced-motion: reduce) { textarea, input[type=text], select { transition: none; } }
+
+/* "linha": uma linha que cresce em vez de cortar o texto */
+textarea.linha { min-height: 44px; resize: none; overflow: hidden; }
+.tab td textarea.linha { min-height: 40px; }
+.grade textarea.linha { min-height: 44px; }
+.largo .tab td { padding: 0.35rem 0.3rem; }
+.tab td textarea { overflow-wrap: break-word; word-break: normal; }
+.tab td select { padding-right: 1.6rem; text-overflow: ellipsis; }
+.tab td input.calc { font-size: 14px; padding-left: 0.45rem; padding-right: 0.3rem; }
+@media (max-width: 760px) {
+  .e-nav a span { display: inline; font-size: 0.76rem; }
+  .e-nav a { padding: 0.34rem 0.6rem; }
+}
+
+/* desenhos (sistema de atividades e mapa): no celular, rolam para o lado em vez de encolher o texto */
+.svg-rolagem { max-width: 100%; }
+@media (max-width: 760px) {
+  .esp-sistema .svg-rolagem, .esp-mapa .svg-rolagem { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 16px; }
+  .esp-sistema .svg-rolagem svg, .esp-mapa .svg-rolagem svg { min-width: 720px; }
+  .esp-sistema .svg-rolagem::after, .esp-mapa .svg-rolagem::after { content: "↔ arraste para o lado para ver o desenho inteiro"; display: block; font-size: 0.74rem; color: var(--muted); margin-top: 0.3rem; }
+}
+@media print { .svg-rolagem::after { display: none !important; } .svg-rolagem svg { min-width: 0 !important; } }

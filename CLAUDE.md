@@ -55,6 +55,17 @@ ferramentas/               gerar_guias.py, conferir_integridade.py, capturar_tel
 - **Chaves (`k`) em `folhas.js` não podem mudar** depois que as empresas começarem: os `.json` salvos dependem delas. Para acrescentar, chave nova; para tirar, apague o item. Prefixos: `f0_`, `f1_`, `f2_`, `f3a_`, `f3b_`, `f3_chk`, `f4_`, `f5a_`, `f5b_`, `f5_chk`, `f6_`, `fc_` (fechamento), `f7_`. Objetivos: `f5a_o1_*` a `f5a_o10_*`; fichas/painéis: `f5a_fc1_*`/`f5b_p1_*` a 10 (3 abertos, 7 em "mais"); ações: `f6_a1_*` a `f6_a12_*`.
 - Todo texto do usuário que entra em `innerHTML` ou no SVG passa por `WS.esc`; valores em campos vão por `.value`.
 
+## Convenções de apresentação (revisão de 26/10/2026)
+
+- **Sem redundância entre dica, passos e rótulos:** a dica diz o conceito ou o critério; os passos ("mão na massa") só aparecem quando há uma sequência que os rótulos dos campos não contam. Se o passo repete o rótulo, apague o passo.
+- **Listas finais ("pronta quando…"):** o que o caderno consegue conferir é item `{ r, auto }` (aparece como "conferido pelo caderno", sem caixa); só o que exige julgamento fica para marcar (`[chave, texto]`, "marque você"). Uma página fica "pronta" na home quando todos os itens estão ok e, se houver, `pronta(c)` da página é verdadeira (Folha 7: critérios de "pronto para o sistema").
+- **Tabelas longas** (`minimo`) começam com poucas linhas e abrem a seguinte conforme o preenchimento, ou pelo botão "Mais uma linha". No celular cada linha vira um cartão com nome (`item`: "Objetivo 3").
+- **Campo `linha`** é uma caixa de uma linha que cresce (textarea), para não cortar texto; números do painel usam `numerico`.
+- Cabeçalho de seção: "Folha X · passo i de N". Guia e exemplo ficam juntos na linha de apoio. O exemplo e a folha da AgroSense abrem em nova aba; no modo exemplo, a navegação entre folhas continua no exemplo.
+- Fim de cada folha: cartão com o estado da lista final, "Salvar arquivo" e o próximo passo. O botão "Salvar arquivo" fica na barra superior e nesse cartão (não no topo da folha).
+- Home: o cartão "Seu caderno" mostra uma barra das 8 etapas e a próxima; a lista detalhada fica na trilha (não repetir).
+- Desenhos (sistema de atividades e mapa) rolam para o lado no celular (`.svg-rolagem`), em vez de encolher o texto.
+
 ## Receitas
 
 ### Mudar uma folha
@@ -78,7 +89,7 @@ A trilha pede que as Folhas 5A, 5B, 6 e 7 tenham os mesmos campos do sistema do 
 ## Como validar antes de publicar
 
 1. `python ferramentas/gerar_guias.py` e `python ferramentas/conferir_integridade.py` (Git Bash: `PYTHONIOENCODING=utf-8`) → **TUDO OK** (texto íntegro dos 8 guias, links e âncoras, privacidade).
-2. `.\ferramentas\testes\rodar_testes.ps1` → `FAIL/ERRO: 0` (68 verificações hoje: prefixos, salvamento, XSS, referências entre folhas, cálculos, SVGs, PDF, arquivo, abrir arquivo, modo exemplo, prontidão da AgroSense, outra aba, apagar). Leva cerca de 1 minuto.
+2. `.\ferramentas\testes\rodar_testes.ps1` → `FAIL/ERRO: 0` (76 verificações hoje: prefixos, salvamento, XSS, referências entre folhas, cálculos, SVGs, listas finais conferidas pelo caderno, linhas progressivas, PDF, arquivo, abrir arquivo, modo exemplo e sua navegação, AgroSense "pronta" nas 8 etapas, outra aba, apagar). Leva cerca de 1 minuto.
 3. `python ferramentas/capturar_telas.py <pasta>` e olhar as capturas (1366px e 520px; o script avisa erro de JavaScript e página mais larga que a tela).
 4. `git add -A; git commit; git push` e conferir o site (cache: `?x=aleatório`).
 

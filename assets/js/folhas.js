@@ -14,13 +14,17 @@
  *             tipo 'objetivo' = lista com os objetivos da Folha 5A
  *   grupo     { t:'grupo', cols: 2|3, itens }
  *   caixa     { t:'caixa', r: título, d: dica, cls, itens }   (quadrante da TOWS, painel de um indicador...)
- *   tabela    { t:'tabela', r, cols: [{ r, tipo, op, ph, w }], linhas: [{ r, d, k: [chaves], rotuloDe, se(c) }], largo }
+ *   tabela    { t:'tabela', r, cols: [{ r, tipo, op, ph, w }], linhas: [{ r, d, k: [chaves], rotuloDe, se(c) }], largo,
+ *               item: nome da linha no celular ("Objetivo 3"), minimo: linhas visíveis no início (as seguintes abrem
+ *               conforme o preenchimento ou pelo botão "Mais uma linha"), vazia: aviso quando nenhuma linha "se" aparece }
  *             coluna tipo 'calc' = calculada por calcular(c) da página (só leitura)
  *   sub       { t:'sub', r }
  *   nota      { t:'nota', html }          orientação (não vai para o PDF)
  *   espelho   { t:'espelho', k, r, vazio }  mostra, sem editar, uma resposta de outra folha
  *   trazer    { t:'trazer', r, mapa: { destino: origem } }
- *   checklist { t:'checklist', itens: [[k, texto]] }   "Sua folha está pronta quando…" (não vai para o PDF)
+ *   checklist { t:'checklist', itens: [[k, texto] | { r: texto, auto: função(campos) }] }   "Sua folha está pronta quando…"
+ *             (não vai para o PDF). [k, texto] = o participante marca (julgamento); { auto } = o caderno confere sozinho.
+ *             A página fica "pronta" (na home) quando todos os itens estão ok.
  *   especial  { t:'especial', nome, n }   componentes com lógica própria (motor.js › ESPECIAIS)
  *   mais      { t:'mais', r, itens }      bloco recolhível (abre sozinho se tiver algo preenchido)
  *   Em qualquer campo: opcional: true (não conta no progresso), relatorio: false (não vai para o PDF)
@@ -60,6 +64,10 @@
   var N_OBJ = 10, N_ACOES = 12, N_FICHAS = 10, N_FICHAS_ABERTAS = 3;
   function seq(n) { var a = []; for (var i = 1; i <= n; i++) a.push(i); return a; }
   var AB = [['A', 'Alto'], ['B', 'Baixo']];
+  /* Itens das listas finais que o próprio caderno confere ({ auto: função(campos), r: texto }); os demais são marcados à mão. */
+  function tem(c, k) { return !!String(c[k] || '').trim(); }
+  var QUADS = ['fo', 'fa', 'wo', 'wa'];
+  function nomesGargalo(c) { return MATRIZ.slice(0, 5).filter(function (d) { return c['f3a_' + d.id + '_garg']; }).map(function (d) { return d.nome; }); }
 
   /* =====================================================================
    * Abertura · Folha 0 — Ponto de partida
@@ -87,7 +95,7 @@
           ] }
         ] },
       { id: 'hoje', n: '0', nav: 'Hoje', folha: 'Folha 0', titulo: 'Hoje somos uma empresa que…',
-        dica: 'Descreva o negócio real de hoje: o que você entrega e para quem. Não é missão nem slogan; é uma descrição honesta, sem adjetivos.',
+        dica: 'Não é missão nem slogan: é uma descrição honesta, sem adjetivos.',
         guia: ['01', 'passo-a-passo'],
         passos: ['Escreva o que vende e para quem vende hoje, não o que gostaria de vender.', 'Incubada sem clientes? Descreva o que está construindo e com quem está validando.'],
         itens: [
@@ -99,7 +107,7 @@
       { id: 'futuro', n: '0', nav: 'Daqui a 3 anos', folha: 'Folha 0', titulo: 'Daqui a 3 anos, queremos…',
         dica: 'Uma ambição qualitativa (como o mercado vai enxergar a empresa) e uma quantitativa (o número que prova que chegou lá). Sem número, a frase vira desejo.',
         guia: ['01', 'o-essencial'],
-        passos: ['Complete a parte qualitativa: a percepção que você quer que clientes, parceiros e concorrentes tenham.', 'Escolha um ou dois números: faturamento, nº de clientes, % de receita recorrente, margem, mercados atendidos.', 'Leia as duas frases em voz alta para quem está na mesa. Se alguém discordar, ótimo: é melhor descobrir agora.'],
+        passos: ['Na parte qualitativa, escreva como clientes, parceiros e concorrentes devem enxergar a empresa.', 'No número, um ou dois indicadores: faturamento, nº de clientes, % de receita recorrente, margem, mercados atendidos.', 'Leia as duas frases em voz alta para quem está na mesa. Se alguém discordar, ótimo: é melhor descobrir agora.'],
         itens: [
           { t: 'grupo', cols: 2, itens: [
             { k: 'f0_fut_reconhecidos', r: '…ser reconhecidos por…', ph: 'Ex.: ser a parceira de agricultura de precisão das cooperativas de grãos do estado' },
@@ -110,7 +118,7 @@
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Sua folha está pronta quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
           ['f0_chk1', 'A frase 1 descreve o negócio real de hoje, sem adjetivos.'],
-          ['f0_chk2', 'A frase 2 tem uma parte qualitativa e um número.'],
+          { r: 'A frase 2 tem uma parte qualitativa e um número.', auto: function (c) { return tem(c, 'f0_fut_reconhecidos') && /\d/.test(c.f0_fut_numero || ''); } },
           ['f0_chk3', 'Os participantes da mesma empresa concordam com as duas frases (ou registraram a divergência).']
         ] } ] }
     ]
@@ -177,15 +185,15 @@
         ] },
       { id: 'critico', n: '?', titulo: 'Crítico amigo',
         dica: 'Troque as Folhas 1 e 2 com outra empresa. Cada uma marca com "?" a força que parece não ter evidência e a direção que parece genérica demais. Devolvam e ajustem.',
-        exemplo: false,
         itens: [ { k: 'f2_critico', r: 'O que a outra empresa questionou e o que vocês ajustaram', ph: 'Ex.: "Equipe qualificada" não tinha evidência; trocamos por "3 agrônomos na equipe, citados como motivo de renovação".' } ] },
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Suas folhas estão prontas quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
-          ['f2_chk1', 'Há 3 oportunidades e 3 ameaças específicas para a sua empresa.'],
-          ['f2_chk2', 'Cada força e fraqueza tem uma evidência (ou está marcada como "a levantar").'],
+          ['f2_chk1', 'As 3 oportunidades e as 3 ameaças são específicas para a sua empresa.'],
+          { r: 'Cada força e fraqueza tem uma evidência (ou está marcada como "a levantar").', auto: function (c) { return seq(3).every(function (i) { return tem(c, 'f1_f' + i) && tem(c, 'f1_f' + i + '_ev') && tem(c, 'f1_q' + i) && tem(c, 'f1_q' + i + '_ev'); }); } },
           ['f2_chk3', 'Nenhum item interno está no externo, e vice-versa.'],
-          ['f2_chk4', 'Há pelo menos uma direção em cada quadrante da TOWS, começando com verbo.'],
-          ['f2_chk5', 'Cada direção indica os itens da Folha 1 que a originaram.']
+          { r: 'Há pelo menos uma direção em cada quadrante da TOWS.', auto: function (c) { return QUADS.every(function (q) { return tem(c, 'f2_' + q + '1') || tem(c, 'f2_' + q + '2'); }); } },
+          ['f2_chk4', 'Cada direção começa com um verbo e é uma ação estratégica, não a reescrita de um item.'],
+          { r: 'Cada direção indica os itens da Folha 1 que a originaram.', auto: function (c) { var n = 0; return QUADS.every(function (q) { return [1, 2].every(function (i) { if (!tem(c, 'f2_' + q + i)) return true; n++; return tem(c, 'f2_' + q + i + '_orig'); }); }) && n > 0; } }
         ] } ] }
     ]
   };
@@ -201,7 +209,7 @@
     guia: '03',
     secoes: [
       { id: 'matriz', n: '3A', nav: 'Maturidade', folha: 'Folha 3A', titulo: 'Diagnóstico de maturidade',
-        dica: 'Estágio atual = o último estágio cujos itens a empresa já pratica todos. O que estiver pela metade é o próximo passo. A matriz não dá nota: indica o próximo passo.',
+        dica: 'Estágio atual = o último estágio cujos itens a empresa já pratica todos; o que estiver pela metade é o próximo passo. A matriz não dá nota, e estar em "Entender" ou "Estruturar" é o esperado para incubadas.',
         guia: ['03', 'parte-a-matriz-de-maturidade-para-a-eo'],
         passos: ['Em cada dimensão, marque o estágio atual e anote uma evidência.', 'Escreva uma atividade do próximo estágio que a empresa precisa dominar (a lista aparece quando você escolhe o estágio).', 'Marque a dimensão gargalo: a mais atrasada, ou a que mais trava as direções da TOWS.'],
         itens: [
@@ -216,9 +224,9 @@
           ] }
         ] },
       { id: 'direcoes-eo', n: '3A', nav: 'Direções de EO', folha: 'Folha 3A', titulo: 'Direções de eficácia operacional',
-        dica: 'Capacidade de execução é limitada: 2 ou 3 direções, com pelo menos uma no gargalo. Se uma direção dos quadrantes fO ou fA da TOWS já falava disso, unifique as duas.',
+        dica: 'Capacidade de execução é limitada: não escolha mais de 3.',
         guia: ['03', 'passo-a-passo-folha-3a'],
-        passos: ['Escolha 2 ou 3 das atividades do próximo estágio como direções de EO.', 'Pelo menos uma deve vir do gargalo.', 'Compare com a Folha 2: se repete uma direção da TOWS, anote qual.'],
+        passos: ['Escolha 2 ou 3 das atividades do próximo estágio como direções de EO, pelo menos uma no gargalo.', 'Compare com a TOWS (Folha 2): se um quadrante fO ou fA já falava disso, unifique as duas e anote qual.'],
         itens: [
           { t: 'tabela', cols: [{ r: 'Direção de EO (atividade)' }, { r: 'Dimensão', tipo: 'opcoes', op: DIMS_EO.map(function (d) { return d.nome; }), w: '16%' }, { r: 'Unifica com a TOWS?', tipo: 'linha', ph: 'Ex.: fO', w: '22%' }],
             linhas: seq(3).map(function (i) { return { r: String(i), k: ['f3a_eo' + i, 'f3a_eo' + i + '_dim', 'f3a_eo' + i + '_tows'] }; }) }
@@ -234,7 +242,7 @@
             { k: 'f3b_base', r: 'Base do posicionamento', tipo: 'opcoes', op: ['Variedade', 'Necessidade', 'Acesso', 'Variedade + necessidade', 'Necessidade + acesso', 'Variedade + acesso'],
               d: 'Variedade: oferta específica feita muito bem. Necessidade: grupo de clientes com necessidade particular. Acesso: clientes alcançados de forma diferente (região, porte, canal).' }
           ] },
-          { t: 'tabela', r: 'Atividades que entregam o posicionamento (de 4 a 6)',
+          { t: 'tabela', r: 'Atividades que entregam o posicionamento (de 4 a 6)', item: 'Atividade', minimo: 4,
             cols: [{ r: 'Atividade (o que fazemos de um jeito diferente)' }, { r: 'Reforça as atividades nº', tipo: 'linha', ph: 'Ex.: 2, 4', w: '24%' }],
             linhas: seq(6).map(function (i) { return { r: String(i), k: ['f3b_at' + i, 'f3b_at' + i + '_liga'] }; }) },
           { t: 'especial', nome: 'sistema' }
@@ -242,7 +250,7 @@
       { id: 'testes', n: '3B', nav: 'Trade-off e imitação', folha: 'Folha 3B', titulo: 'Testes do trade-off e da imitação',
         dica: 'Renúncia de verdade dói: é um cliente, produto ou receita de que você abre mão. Se não há renúncia, provavelmente não é estratégia.',
         guia: ['03', 'trade-off-o-que-voce-escolhe-nao-fazer'],
-        passos: ['Complete: "Para isso, vamos deixar de ________."', 'Um concorrente copiaria uma atividade facilmente? E todas juntas?', 'Se o conjunto é fácil de copiar, o posicionamento ainda é fraco: volte às atividades.'],
+        passos: ['Se o conjunto de atividades for fácil de copiar, o posicionamento ainda é fraco: volte às atividades e reforce as ligações.'],
         itens: [
           { k: 'f3b_tradeoff', r: 'Para isso, vamos deixar de…', ph: 'Ex.: vender sensores avulsos a pequenos produtores e atender culturas fora de grãos' },
           { t: 'grupo', cols: 2, itens: [
@@ -252,10 +260,17 @@
         ] },
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Suas folhas estão prontas quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
-          ['f3_chk1', 'Cada uma das 5 dimensões de EO tem estágio, evidência e próximo passo.'],
-          ['f3_chk2', 'O gargalo está identificado.'],
-          ['f3_chk3', 'Há 2 ou 3 direções de EO, com pelo menos uma no gargalo.'],
-          ['f3_chk4', 'O posicionamento tem base definida e de 4 a 6 atividades concretas ligadas entre si.'],
+          { r: 'Cada uma das 5 dimensões de EO tem estágio, evidência e próximo passo.', auto: function (c) { return DIMS_EO.every(function (d) { return tem(c, 'f3a_' + d.id + '_est') && tem(c, 'f3a_' + d.id + '_ev') && tem(c, 'f3a_' + d.id + '_prox'); }); } },
+          { r: 'O gargalo está identificado.', auto: function (c) { return nomesGargalo(c).length > 0; } },
+          { r: 'Há 2 ou 3 direções de EO, com pelo menos uma no gargalo.', auto: function (c) {
+            var eo = seq(3).filter(function (i) { return tem(c, 'f3a_eo' + i); }), g = nomesGargalo(c);
+            return eo.length >= 2 && eo.some(function (i) { return g.indexOf(c['f3a_eo' + i + '_dim']) >= 0; });
+          } },
+          { r: 'O posicionamento tem base definida e de 4 a 6 atividades ligadas entre si.', auto: function (c) {
+            var at = seq(6).filter(function (i) { return tem(c, 'f3b_at' + i); });
+            return tem(c, 'f3b_pos') && tem(c, 'f3b_base') && at.length >= 4 && at.every(function (i) { return tem(c, 'f3b_at' + i + '_liga') || at.some(function (j) { return WS_F.numeros(c['f3b_at' + j + '_liga']).indexOf(i) >= 0; }); });
+          } },
+          ['f3_chk4', 'As atividades são concretas: algo que a empresa faz e alguém consegue observar.'],
           ['f3_chk5', 'O trade-off é uma renúncia real.'],
           ['f3_chk6', 'O conjunto de atividades é difícil de copiar.']
         ] } ] }
@@ -279,7 +294,8 @@
         itens: [
           { t: 'tabela', largo: true,
             cols: [{ r: 'Produto, serviço ou segmento', tipo: 'linha', w: '24%' }, { r: 'Mercado cresce', tipo: 'opcoes', op: ['Rápido', 'Devagar'], w: '12%' }, { r: 'Posição competitiva', tipo: 'opcoes', op: ['Forte', 'Fraca'], w: '12%' },
-              { r: 'Quadrante', tipo: 'calc', w: '15%' }, { r: 'Decisão', tipo: 'opcoes', op: ['Investir', 'Manter', 'Testar', 'Reposicionar', 'Descontinuar'], w: '13%' }, { r: 'Por quê', ph: 'Evidência da posição ou detalhe da decisão' }],
+              { r: 'Quadrante', tipo: 'calc', w: '15%' }, { r: 'Decisão', tipo: 'opcoes', op: ['Investir', 'Manter', ['Testar', 'Testar (investir seletivamente)'], 'Reposicionar', 'Descontinuar'], w: '13%' }, { r: 'Por quê', ph: 'Evidência da posição ou detalhe da decisão' }],
+            item: 'Item', minimo: 3,
             linhas: seq(5).map(function (i) { var p = 'f4_bcg' + i + '_'; return { r: String(i), k: [p + 'item', p + 'merc', p + 'pos', p + 'quad', p + 'dec', p + 'obs'] }; }) },
           { t: 'especial', nome: 'bcg' },
           { k: 'f4_bcg_equilibrio', r: 'Equilíbrio do portfólio', ph: 'O que financia as apostas? O que fica com menos atenção para que as estrelas recebam mais?' }
@@ -287,19 +303,17 @@
       { id: 'ansoff', n: '4', nav: 'Ansoff', folha: 'Folha 4', titulo: 'Matriz de Ansoff: por onde crescer',
         dica: 'O risco cresce da penetração para a diversificação. Penetração não é falta de ambição: para muitas empresas pequenas, é o vetor de maior retorno e menor risco. Escolha um.',
         guia: ['04', 'o-essencial-matriz-de-ansoff'],
-        passos: ['Marque onde está a maior parte da receita hoje.', 'Escolha um vetor prioritário para os próximos 12–24 meses.', 'Justifique em uma linha: por que esse vetor e não outro?'],
         itens: [
           { t: 'grupo', cols: 2, itens: [
             { k: 'f4_ans_hoje', r: 'Onde está a maior parte da receita hoje', tipo: 'opcoes', op: ANSOFF },
             { k: 'f4_ans_vetor', r: 'Vetor prioritário (12–24 meses)', tipo: 'opcoes', op: ANSOFF }
           ] },
           { t: 'especial', nome: 'ansoff' },
-          { k: 'f4_ans_just', r: 'Justificativa (uma linha)', tipo: 'linha', ph: 'Ex.: antes de ir para outros estados, é preciso conseguir implantar em escala' }
+          { k: 'f4_ans_just', r: 'Por que esse vetor e não outro? (uma linha)', tipo: 'linha', ph: 'Ex.: antes de ir para outros estados, é preciso conseguir implantar em escala' }
         ] },
       { id: 'integracao', n: '4', nav: 'Integração', folha: 'Folha 4', titulo: 'Integração com Porter e com a maturidade',
         dica: 'Crescimento que obriga a abandonar o trade-off da Folha 3B é um alerta: pode diluir o posicionamento. Crescer também exige base: confira a maturidade.',
         guia: ['04', 'duas-conexoes-importantes'],
-        passos: ['A escolha gera uma nova direção estratégica ou reforça uma da Folha 3B?', 'Ela respeita o trade-off e o estágio de maturidade (veja abaixo o que a empresa marcou)?'],
         itens: [
           { t: 'espelho', k: 'f3b_tradeoff', r: 'Seu trade-off (Folha 3B)', vazio: 'Ainda não preenchido na Folha 3B.' },
           { t: 'espelho', k: 'f3a_estrategia_est', r: 'Estágio na linha Estratégia (Folha 3A)', vazio: 'Ainda não preenchido na Folha 3A.' },
@@ -308,9 +322,12 @@
         ] },
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Sua folha está pronta quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
-          ['f4_chk1', 'De 3 a 5 itens estão na BCG, cada um com uma decisão.'],
-          ['f4_chk2', 'O portfólio tem pelo menos uma fonte de caixa e uma aposta de futuro.'],
-          ['f4_chk3', 'Há um vetor de Ansoff prioritário, com justificativa.'],
+          { r: 'De 3 a 5 itens estão na BCG, cada um com uma decisão.', auto: function (c) { var it = seq(5).filter(function (i) { return tem(c, 'f4_bcg' + i + '_item'); }); return it.length >= 3 && it.every(function (i) { return tem(c, 'f4_bcg' + i + '_dec'); }); } },
+          { r: 'O portfólio tem pelo menos uma fonte de caixa (vaca leiteira ou estrela) e uma aposta de futuro (estrela ou interrogação).', auto: function (c) {
+            var q = BLOCO3.calcular(c), qs = seq(5).map(function (i) { return q['f4_bcg' + i + '_quad']; });
+            return qs.some(function (x) { return /Vaca|Estrela/.test(x); }) && qs.some(function (x) { return /Estrela|Interroga/.test(x); });
+          } },
+          { r: 'Há um vetor de Ansoff prioritário, com justificativa.', auto: function (c) { return tem(c, 'f4_ans_vetor') && tem(c, 'f4_ans_just'); } },
           ['f4_chk4', 'A escolha é coerente com o trade-off (Folha 3B) e com a maturidade (Folha 3A).']
         ] } ] }
     ],
@@ -349,9 +366,9 @@
     var p = 'f5b_p' + n + '_';
     return { t: 'caixa', r: 'Indicador ' + n, cls: 'painel', rotuloDe: 'f5a_fc' + n + '_nome', itens: [
       { t: 'grupo', cols: 3, itens: [
-        { k: p + 'meta', r: 'Meta do próximo período (só o número)', tipo: 'linha', ph: 'Ex.: 60000', d: 'É contra ela que o farol compara.' },
-        { k: p + 'tol', r: 'Tolerância do amarelo (%)', tipo: 'linha', ph: '15', d: 'Padrão 15. Críticos (caixa, perda de clientes): 5. Tendência: 25 ou mais.' },
-        { k: p + 'sim', r: 'Simulador: um resultado hipotético', tipo: 'linha', ph: 'Ex.: 49000', d: 'Digite um valor e veja a cor. Não vai para o PDF.', relatorio: false }
+        { k: p + 'meta', r: 'Meta do próximo período (só o número)', tipo: 'numerico', ph: 'Ex.: 60000', d: 'É contra ela que o farol compara.' },
+        { k: p + 'tol', r: 'Tolerância do amarelo (%)', tipo: 'numerico', ph: '15', d: 'Padrão 15. Críticos (caixa, perda de clientes): 5. Tendência: 25 ou mais.' },
+        { k: p + 'sim', r: 'Simulador: um resultado hipotético', tipo: 'numerico', ph: 'Ex.: 49000', d: 'Digite um valor e veja a cor. Não vai para o PDF.', relatorio: false }
       ] },
       { t: 'especial', nome: 'farol', n: n },
       { t: 'grupo', cols: 2, itens: [
@@ -369,13 +386,13 @@
       { id: 'objetivos', n: '5A', nav: 'Objetivos', folha: 'Folha 5A', titulo: 'Objetivos e indicadores',
         dica: 'Objetivo = verbo de resultado + objeto + qualificador. De 6 a 10, com pelo menos 2 de POS e 1 de EO ligado ao gargalo. Sem linha de base, escreva "a levantar": isso vira tarefa para a Aula 2.',
         guia: ['05', '1-do-verbo-ao-objetivo'],
-        passos: ['Reúna as direções das Folhas 2, 3A, 3B e 4 (estão logo abaixo).', 'Redija de 6 a 10 objetivos e marque EO ou POS. Marque "gargalo" nos que atacam a dimensão gargalo.', 'Para cada objetivo, um indicador de resultado (e, se fizer sentido, um de tendência).', 'Preencha linha de base, meta e prazo.'],
+        passos: ['Parta das direções que você já tem (logo abaixo) e redija cada uma como objetivo. Marque EO ou POS, e "gargalo" nos que atacam a dimensão gargalo.', 'Para cada objetivo, um indicador de resultado e, se fizer sentido, um de tendência.', 'Preencha linha de base, meta e prazo. A conferência embaixo da tabela mostra o que falta.'],
         itens: [
           { t: 'especial', nome: 'direcoes' },
-          { t: 'tabela', largo: true,
-            cols: [{ r: 'Objetivo', w: '21%', ph: 'Verbo + objeto + qualificador' }, { r: 'EO/POS', tipo: 'opcoes', op: ['EO', 'POS'], w: '8%' }, { r: 'Gargalo', tipo: 'check', w: '7%' },
-              { r: 'Indicador de resultado', w: '17%' }, { r: 'Indicador de tendência (opcional)', w: '15%' },
-              { r: 'Linha de base', tipo: 'linha', w: '10%' }, { r: 'Meta', tipo: 'linha', w: '11%' }, { r: 'Prazo', tipo: 'linha', ph: 'mês/ano' }],
+          { t: 'tabela', largo: true, item: 'Objetivo', minimo: 6,
+            cols: [{ r: 'Objetivo', w: '19%', ph: 'Verbo + objeto + qualificador' }, { r: 'EO/POS', tipo: 'opcoes', op: ['EO', 'POS'], w: '8%' }, { r: 'Gargalo', tipo: 'check', w: '6%' },
+              { r: 'Indicador de resultado', w: '15%' }, { r: 'Indicador de tendência (opcional)', w: '13%' },
+              { r: 'Linha de base', tipo: 'linha', w: '10%' }, { r: 'Meta', tipo: 'linha', w: '10%' }, { r: 'Prazo', tipo: 'linha', ph: 'mês/ano', w: '12%' }],
             linhas: seq(N_OBJ).map(function (i) { var p = 'f5a_o' + i + '_'; return { r: String(i), k: [p + 'obj', p + 'tipo', p + 'garg', p + 'ind', p + 'ind2', p + 'base', p + 'meta', p + 'prazo'] }; }) },
           { t: 'especial', nome: 'validador' }
         ] },
@@ -388,7 +405,6 @@
       { id: 'vaidade', n: '5A', nav: 'Vaidade', folha: 'Folha 5A', titulo: 'Teste da vaidade',
         dica: 'Em dupla com outra empresa, aplique aos indicadores dela a pergunta "se este número cair, eu mudo alguma coisa?" e marque os suspeitos.',
         guia: ['05', '4-cuidado-com-as-metricas-de-vaidade'],
-        exemplo: false,
         itens: [ { k: 'f5a_vaidade', r: 'Indicadores marcados como suspeitos e o que vocês fizeram', ph: 'Ex.: "Downloads do app" foi marcado; trocamos por "cooperativas ativas na plataforma".' } ] },
       { id: 'painel', n: '5B', nav: 'Faróis', folha: 'Folha 5B', titulo: 'Painel de controle: faixas do farol e gatilhos',
         dica: 'As faixas são combinadas agora, antes de medir, nunca depois de ver o resultado. Regra extra: piorar em duas medições seguidas também acende o amarelo.',
@@ -404,21 +420,26 @@
           { k: 'f5b_sim_resp', r: 'Para o indicador 1: cor, quem age, o que acontece e até quando', ph: 'Ex.: 🔴 vermelho → 5 porquês → plano corretivo em até 7 dias, responsável: sócio de operações.' }
         ] },
       { id: 'registro', n: '5B', nav: 'Correção de rota', folha: 'Folha 5B', titulo: 'Registro de correção de rota',
-        dica: 'Use a partir da primeira medição: cada amarelo ou vermelho vira uma linha. É esse registro que transforma o painel em aprendizado. Vermelho por dois ciclos seguidos: é problema de execução ou de estratégia?',
+        dica: 'Para usar depois do workshop, a partir da primeira medição: cada amarelo ou vermelho vira uma linha. É esse registro que transforma o painel em aprendizado. Vermelho por dois ciclos seguidos: é problema de execução ou de estratégia?',
         guia: ['05', 'o-ritual'],
         itens: [
-          { t: 'tabela', largo: true,
+          { t: 'tabela', largo: true, item: 'Registro', minimo: 2,
             cols: [{ r: 'Data', tipo: 'data', w: '12%' }, { r: 'Indicador', tipo: 'linha', w: '14%' }, { r: 'Cor', tipo: 'opcoes', op: ['🟡 Amarelo', '🔴 Vermelho'], w: '11%' }, { r: 'Causa identificada' }, { r: 'Ação corretiva' },
               { r: 'Responsável', tipo: 'linha', w: '11%' }, { r: 'Prazo', tipo: 'linha', w: '8%' }, { r: 'Status', tipo: 'opcoes', op: ['A iniciar', 'Em andamento', 'Concluída'], w: '11%' }],
             linhas: seq(5).map(function (i) { var p = 'f5b_rc' + i + '_'; return { r: String(i), k: [p + 'data', p + 'ind', p + 'cor', p + 'causa', p + 'acao', p + 'resp', p + 'prazo', p + 'status'] }; }) }
         ] },
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Suas folhas estão prontas quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
-          ['f5_chk1', 'Há de 6 a 10 objetivos, com pelo menos 2 de POS e 1 de EO no gargalo.'],
-          ['f5_chk2', 'Cada objetivo tem indicador, linha de base (ou "a levantar"), meta e prazo.'],
-          ['f5_chk3', 'Pelo menos 3 indicadores têm ficha completa.'],
+          { r: 'Há de 6 a 10 objetivos, com pelo menos 2 de POS e 1 de EO no gargalo.', auto: function (c) {
+            var o = WS_F.objetivos(c);
+            return o.length >= 6 && o.length <= 10 && o.filter(function (x) { return x.tipo === 'POS'; }).length >= 2 && o.some(function (x) { return x.tipo === 'EO' && x.garg; });
+          } },
+          { r: 'Cada objetivo tem indicador, linha de base (ou "a levantar"), meta e prazo.', auto: function (c) { var o = WS_F.objetivos(c); return o.length > 0 && o.every(function (x) { return x.ind && x.base && x.meta && x.prazo; }); } },
+          { r: 'Pelo menos 3 indicadores têm ficha completa.', auto: function (c) {
+            return WS_F.fichas(c).filter(function (f) { return f.obj && f.nome && f.formula && f.unidade && f.fonte && f.freq && f.pol && f.base && f.meta && f.resp; }).length >= 3;
+          } },
           ['f5_chk4', 'Nenhum indicador falha no teste da vaidade.'],
-          ['f5_chk5', 'Os 3 indicadores principais têm faixas de farol e gatilhos de amarelo e vermelho.'],
+          { r: 'Os 3 indicadores principais têm faixas de farol e gatilhos de amarelo e vermelho.', auto: function (c) { return WS_F.fichas(c).filter(function (f) { return f.faixas && f.gatAm && f.gatVerm; }).length >= 3; } },
           ['f5_chk6', 'Você consegue responder à simulação: cor, quem age, o que acontece e até quando.']
         ] } ] }
     ],
@@ -444,35 +465,40 @@
     guia: '06',
     secoes: [
       { id: 'acoes', n: '6', nav: 'Ações', folha: 'Folha 6', titulo: 'Ações e teste da alavanca',
-        dica: 'Ação estratégica tem começo, meio e fim. Teste da alavanca: "se fizermos isto, qual indicador se move, em quanto e em quanto tempo?" Sem resposta, risque a ação.',
+        dica: 'Ação estratégica tem começo, meio e fim: rotina ("atender clientes") e intenção ("melhorar o financeiro") não entram.',
         guia: ['06', 'o-teste-da-alavanca'],
-        passos: ['Para cada objetivo da Folha 5A, liste de 1 a 3 ações.', 'Aplique o teste da alavanca e apague as que não passam.', 'Classifique impacto e esforço: a prioridade aparece sozinha.'],
+        passos: ['Para cada objetivo da Folha 5A, liste de 1 a 3 ações.', 'Teste da alavanca: "se fizermos isto, qual indicador se move, em quanto e em quanto tempo?" Sem resposta, apague a ação.', 'Classifique impacto e esforço: a prioridade aparece sozinha.'],
         itens: [
-          { t: 'tabela', largo: true,
-            cols: [{ r: 'Objetivo', tipo: 'objetivo', w: '17%' }, { r: 'Ação', w: '23%' }, { r: 'Indicador que move', w: '15%' }, { r: 'Em quanto e em quanto tempo?', ph: 'Teste da alavanca' },
-              { r: 'Impacto', tipo: 'opcoes', op: AB, w: '8%' }, { r: 'Esforço', tipo: 'opcoes', op: AB, w: '8%' }, { r: 'Prioridade', tipo: 'calc', w: '11%' }],
+          { t: 'tabela', largo: true, item: 'Ação', minimo: 5,
+            cols: [{ r: 'Objetivo', tipo: 'objetivo', w: '18%' }, { r: 'Ação', w: '19%' }, { r: 'Indicador que move', w: '12%' }, { r: 'Em quanto e em quanto tempo?', ph: 'Teste da alavanca' },
+              { r: 'Impacto', tipo: 'opcoes', op: AB, w: '11%' }, { r: 'Esforço', tipo: 'opcoes', op: AB, w: '11%' }, { r: 'Prioridade', tipo: 'calc', w: '10%' }],
             linhas: seq(N_ACOES).map(function (i) { var p = 'f6_a' + i + '_'; return { r: String(i), k: [p + 'obj', p + 'acao', p + 'ind', p + 'alav', p + 'imp', p + 'esf', p + 'prio'] }; }) },
           { t: 'especial', nome: 'priorizacao' }
         ] },
       { id: 'detalhe', n: '6', nav: 'Quem, quando, quanto', folha: 'Folha 6', titulo: 'O mínimo de cada ação: quem, até quando, quanto custa',
-        dica: 'Uma pessoa por ação (nunca "todos"), prazo com mês e ano, custo estimado. O plano detalhado de cada ação é feito depois, por quem for responsável.',
+        dica: 'Obrigatório para as ações em "Fazer já" e "Planejar": uma pessoa por ação (nunca "todos"), prazo com mês e ano, custo estimado. O plano detalhado de cada ação é feito depois, por quem for responsável. As linhas aparecem conforme as ações são escritas acima.',
         guia: ['06', 'o-detalhamento-minimo'],
-        passos: ['Preencha responsável, prazo e custo das ações em "Fazer já" e "Planejar".', 'Conte as ações em andamento ao mesmo tempo: se passar de 8, escolha o que adiar.'],
         itens: [
-          { t: 'tabela',
+          { t: 'tabela', item: 'Ação',
             cols: [{ r: 'Responsável', tipo: 'linha' }, { r: 'Prazo (mês/ano)', tipo: 'linha', w: '18%' }, { r: 'Custo estimado', tipo: 'linha', w: '18%' }],
             linhas: seq(N_ACOES).map(function (i) {
               var p = 'f6_a' + i + '_';
               return { r: String(i), rotuloDe: p + 'acao', k: [p + 'resp', p + 'prazo', p + 'custo'], se: function (c) { return !!c[p + 'acao']; } };
-            }) },
-          { t: 'nota', html: 'As linhas aparecem conforme as ações são escritas na tabela acima.' }
+            }) }
         ] },
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Sua folha está pronta quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
-          ['f6_chk1', 'Cada objetivo tem de 1 a 3 ações, e todas passaram no teste da alavanca.'],
-          ['f6_chk2', 'Cada indicador do painel (Folha 5B) tem pelo menos uma ação vinculada.'],
-          ['f6_chk3', 'As ações priorizadas têm responsável (uma pessoa), prazo (mês/ano) e custo estimado.'],
-          ['f6_chk4', 'Não há mais de 6 a 8 ações em andamento ao mesmo tempo.']
+          { r: 'Cada objetivo tem de 1 a 3 ações, e todas têm o teste da alavanca respondido.', auto: function (c) {
+            var o = WS_F.objetivos(c), a = WS_F.acoes(c);
+            return o.length > 0 && o.every(function (x) { var n = a.filter(function (y) { return y.obj === x.n; }).length; return n >= 1 && n <= 3; }) && a.every(function (y) { return y.ind && y.alav; });
+          } },
+          ['f6_chk1', 'As ações são estratégicas (têm começo e fim), não rotina nem intenção.'],
+          { r: 'Cada indicador do painel (Folha 5B) tem pelo menos uma ação vinculada.', auto: function (c) { var a = WS_F.acoes(c), f = WS_F.fichas(c).filter(function (x) { return x.obj; }); return f.length > 0 && f.every(function (x) { return a.some(function (y) { return y.obj === x.obj; }); }); } },
+          { r: 'As ações em "Fazer já" e "Planejar" têm responsável, prazo e custo estimado.', auto: function (c) {
+            var a = WS_F.acoes(c).filter(function (y) { return y.prio === 'Fazer já' || y.prio === 'Planejar'; });
+            return a.length > 0 && a.every(function (y) { return y.resp && y.prazo && y.custo; });
+          } },
+          { r: 'Não há mais de 8 ações em andamento ao mesmo tempo.', auto: function (c) { var a = WS_F.acoes(c).filter(function (y) { return y.prio === 'Fazer já' || y.prio === 'Planejar'; }); return a.length > 0 && a.length <= 8; } }
         ] } ] }
     ],
     calcular: function (c) {
@@ -542,15 +568,14 @@
       { id: 'perspectivas', n: '7', nav: 'Perspectivas e setas', folha: 'Folha 7', titulo: 'Cada objetivo na sua perspectiva, com setas de causa e efeito',
         dica: 'Na dúvida, use a perspectiva do efeito principal do objetivo: é no caixa, no cliente ou na capacidade interna? Ligue só as relações em que você acredita: poucas setas fortes valem mais que muitas fracas.',
         guia: ['07', 'as-quatro-perspectivas'],
-        passos: ['Para cada objetivo da Folha 5A, escolha a perspectiva.', 'Em "leva a", escreva os números dos objetivos que ele ajuda a alcançar (setas de baixo para cima).', 'Objetivo sem seta? Ligue, elimine ou escreva a justificativa.'],
+        passos: ['Para cada objetivo da Folha 5A, escolha a perspectiva. Para mudar o texto de um objetivo, volte à Folha 5A.', 'Em "leva a", escreva os números dos objetivos que ele ajuda a alcançar (setas de baixo para cima).', 'Objetivo sem seta? Ligue, elimine ou escreva a justificativa.'],
         itens: [
-          { t: 'tabela', largo: true,
+          { t: 'tabela', largo: true, item: 'Objetivo', vazia: 'Escreva os objetivos na Folha 5A: eles aparecem aqui para você posicionar no mapa.',
             cols: [{ r: 'Perspectiva', tipo: 'opcoes', op: PERSPECTIVAS.map(function (p) { return [p[0], p[1]]; }), w: '22%' }, { r: 'Leva a (objetivos nº)', tipo: 'linha', ph: 'Ex.: 3', w: '16%' }, { r: 'Justificativa, se ficar sem seta', ph: 'Ex.: objetivo habilitador' }],
             linhas: seq(N_OBJ).map(function (i) {
               var p = 'f7_o' + i + '_';
               return { r: String(i), rotuloDe: 'f5a_o' + i + '_obj', k: [p + 'persp', p + 'leva', p + 'just'], se: function (c) { return !!c['f5a_o' + i + '_obj']; } };
-            }) },
-          { t: 'nota', html: 'As linhas aparecem conforme os objetivos da Folha 5A. Para mudar um objetivo, volte à Folha 5A.' }
+            }) }
         ] },
       { id: 'mapa', n: '7', nav: 'Mapa e equilíbrio', folha: 'Folha 7', titulo: 'O mapa estratégico e o teste do equilíbrio',
         dica: 'Leia cada seta como "se… então…". Um mapa sem objetivo de POS é um mapa de eficiência, não de estratégia. Se o gargalo da Folha 3A não aparece, o plano ignora o principal freio da empresa.',
@@ -561,20 +586,17 @@
           { k: 'f7_galeria', r: 'Galeria relâmpago: perguntas que outras empresas deixaram no seu mapa e suas respostas', ph: 'Opcional', relatorio: false }
         ] },
       { id: 'pronto', n: '★', nav: 'Pronto?', titulo: 'Pronto para o sistema do parque?',
-        dica: 'O caderno está pronto para o lançamento quando todos os critérios abaixo estão verdes. O caderno completo abre com um resumo organizado por perspectiva, na ordem em que você vai digitar no sistema.',
+        dica: 'Os critérios abaixo são conferidos pelo próprio caderno, com o que está em todas as folhas. Falta só o que depende de vocês: ler as setas em voz alta. O caderno completo abre com um resumo por perspectiva, na ordem em que você vai digitar no sistema.',
         exemplo: false,
         itens: [
           { t: 'especial', nome: 'prontidao' },
           { t: 'checklist', itens: [
-            ['f7_chk1', 'Todas as perspectivas têm pelo menos um objetivo.'],
-            ['f7_chk2', 'Há pelo menos 2 objetivos de POS.'],
-            ['f7_chk3', 'A dimensão gargalo da Matriz de Maturidade aparece no mapa.'],
-            ['f7_chk4', 'Todo objetivo tem pelo menos uma seta, ou uma justificativa registrada.'],
-            ['f7_chk5', 'Cada seta pode ser lida como "se… então…".'],
-            ['f7_chk6', 'Cada objetivo tem indicador, faixas de farol e ação.']
+            ['f7_chk5', 'Lemos cada seta em voz alta como "se… então…", e a mesa concorda com todas.']
           ] }
         ] }
-    ]
+    ],
+    // a Folha 7 só fica "pronta" com todos os critérios de "pronto para o sistema" verdes (mostrados acima da lista)
+    pronta: function (c) { return WS_M.criterios(c).every(function (x) { return x[0]; }); }
   };
 
   /* ---------------- funções de domínio usadas pelo motor e pelas folhas ---------------- */

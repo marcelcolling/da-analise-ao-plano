@@ -61,6 +61,12 @@ const salvo = async (w) => { w.WS_PAGINA.salvarAgora(); await sleep(100); return
     w = await carregar('/folhas/abertura.html');
     ok(k(w, 'f0_empresa').value === 'Teste ' + XSS && k(w, 'f0_chk1').checked, 'Folha 0: respostas voltam ao recarregar');
     ok(semXss(w), 'Folha 0 recarregada: nenhum HTML injetado');
+    const auto0 = q(w, '#s-pronta .chk-conferido');
+    ok(auto0 && !auto0.classList.contains('ok') && !auto0.querySelector('input'), 'lista final: item conferido pelo caderno, sem caixa para marcar, ainda pendente');
+    digitar(w, 'f0_fut_reconhecidos', 'parceira das cooperativas'); digitar(w, 'f0_fut_numero', 'R$ 6 milhões');
+    await sleep(200);
+    ok(auto0.classList.contains('ok') && q(w, '#progGeral').textContent.includes('lista final: 2 de 3'), 'lista final: o caderno confere "frase 2 com número" sozinho');
+    ok(q(w, '#s-hoje .e-alimenta').textContent.includes('passo 2 de 4') && q(w, '.proximo a[href*="bloco1.html"]'), 'cabeçalho "passo X de N" e cartão com a próxima folha');
 
     /* ---- Folhas 1 e 2 ---- */
     w = await carregar('/folhas/bloco1.html');
@@ -102,6 +108,13 @@ const salvo = async (w) => { w.WS_PAGINA.salvarAgora(); await sleep(100); return
     /* ---- Folhas 5A e 5B ---- */
     w = await carregar('/folhas/bloco4.html');
     ok(q(w, '.esp-direcoes').textContent.includes('Criar pacote financiável') && q(w, '.esp-direcoes').textContent.includes('Gargalo: Operação'), '5A: direções das folhas anteriores reunidas (com o gargalo)');
+    const visiveis = () => Array.from(w.document.querySelectorAll('#s-objetivos tbody tr')).filter(t => !t.hidden).length;
+    ok(visiveis() === 6, 'tabela de objetivos começa com 6 linhas (não 10)');
+    digitar(w, 'f5a_o6_obj', 'Sexto'); await sleep(100);
+    ok(visiveis() === 7, 'ao preencher a última linha, a seguinte aparece');
+    digitar(w, 'f5a_o6_obj', ''); await sleep(100);
+    q(w, '#s-objetivos [data-mais-linha]').click(); await sleep(100);
+    ok(visiveis() === 7 && w.document.activeElement === k(w, 'f5a_o7_obj'), '"Mais uma linha" abre a linha seguinte e põe o cursor nela');
     digitar(w, 'f5a_o1_obj', 'Aumentar receita recorrente'); digitar(w, 'f5a_o1_tipo', 'POS'); digitar(w, 'f5a_o1_ind', '% recorrente');
     digitar(w, 'f5a_o2_obj', 'Reduzir implantação ' + XSS); digitar(w, 'f5a_o2_tipo', 'EO'); marcar(w, 'f5a_o2_garg');
     await sleep(300);
@@ -204,6 +217,10 @@ const salvo = async (w) => { w.WS_PAGINA.salvarAgora(); await sleep(100); return
     ok(w.document.querySelectorAll('#p-sistema .r-obj').length === 7 && w.document.querySelectorAll('#p-sistema .r-persp').length === 4, 'caderno da AgroSense: 7 objetivos nas 4 perspectivas');
     ok(q(w, '#p-bloco2 svg.svg-sistema') && q(w, '#p-bloco6 svg.svg-mapa'), 'caderno da AgroSense: desenhos do sistema de atividades e do mapa');
     ok(w.WS_M.criterios(w.WS_M.completar(w.WS_EXEMPLO.campos)).every(x => x[0]), 'critérios de prontidão do exemplo: todos verdes');
+    const naoProntas = w.WS_F.ORDEM.filter(id => w.WS_M.status(id, w.WS_EXEMPLO.campos).estado !== 'pronta');
+    ok(!naoProntas.length, 'AgroSense: as 8 etapas ficam "prontas" (listas finais completas)' + (naoProntas.length ? ' — faltam: ' + naoProntas.join(', ') : ''));
+    w = await carregar('/folhas/bloco3.html?exemplo');
+    ok(q(w, '.proximo a[href*="bloco4.html?exemplo"]') && q(w, '.e-rodape a[href*="bloco2.html?exemplo"]'), 'modo exemplo: a navegação entre folhas continua no exemplo');
 
     /* ---- outra aba ---- */
     w = await carregar('/folhas/bloco6.html');

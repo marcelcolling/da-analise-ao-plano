@@ -48,6 +48,17 @@
   .progresso li.andamento span:last-child { color:#f7d27a; }
   .progresso li.pronta span:last-child { color:#8fe0b6; }
   .sessao-acoes { display:flex; gap:0.6rem; flex-wrap:wrap; }
+  .barra-etapas { display:grid; grid-template-columns:repeat(8, minmax(0,1fr)); gap:4px; margin:0.4rem 0 0.6rem; }
+  .barra-etapas .seg { display:flex; align-items:flex-end; justify-content:center; height:44px; border-radius:8px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); text-decoration:none; padding-bottom:0.25rem; transition:transform .15s; }
+  .barra-etapas .seg span { font-size:0.68rem; font-weight:700; color:rgba(255,255,255,0.7); }
+  .barra-etapas .seg.andamento { background:linear-gradient(to top, rgba(239,185,60,0.55) 50%, rgba(255,255,255,0.08) 50%); }
+  .barra-etapas .seg.pronta { background:#2f8f5f; border-color:#2f8f5f; }
+  .barra-etapas .seg.pronta span, .barra-etapas .seg.andamento span { color:#fff; }
+  .barra-etapas .seg:hover { transform:translateY(-2px); }
+  .barra-etapas .seg:focus-visible { outline:3px solid var(--am); outline-offset:2px; }
+  .barra-legenda { font-size:0.86rem !important; margin:0 0 1.1rem !important; }
+  .barra-legenda b { color:#fff; }
+  .barra-legenda a { color:var(--am); font-weight:600; }
   .priv { display:flex; gap:0.5rem; align-items:flex-start; font-size:0.8rem !important; color:rgba(255,255,255,0.72) !important; margin:1rem 0 0 !important; }
   .priv::before { content:'🔒'; }
 
@@ -378,13 +389,16 @@
     } else {
       var e = WS.estado();
       var prox = F.ORDEM.filter(function (id) { return st[id].estado !== 'pronta'; })[0];
+      var prontas = F.ORDEM.filter(function (id) { return st[id].estado === 'pronta'; }).length;
       card.innerHTML =
         '<div class="eyebrow">Seu caderno</div>' +
         '<h2>' + (WS.empresa() ? esc(WS.empresa()) : 'Caderno sem nome') + '</h2>' +
-        '<ul class="progresso">' + F.ORDEM.map(function (id) {
-          return '<li class="' + st[id].estado + '"><a href="folhas/' + id + '.html">' + esc(P[id].codigo) + ' · ' + esc(P[id].titulo.split(':')[0]) + '</a><span>' + esc(st[id].texto.replace(/ · lista.*/, '')) + '</span></li>';
-        }).join('') + '</ul>' +
-        '<div class="sessao-acoes"><a class="vd-btn vd-btn-amarelo" href="' + (prox ? 'folhas/' + prox + '.html' : 'caderno.html') + '">Continuar</a>' +
+        '<div class="barra-etapas" role="img" aria-label="' + prontas + ' de ' + F.ORDEM.length + ' etapas prontas">' + F.ORDEM.map(function (id) {
+          return '<a class="seg ' + st[id].estado + '" href="folhas/' + id + '.html" title="' + esc(P[id].codigo + ' · ' + P[id].titulo + ': ' + st[id].texto) + '"><span>' + esc(P[id].codigo.replace(/^Folhas? /, 'F').replace(' e ', '–').replace('Fechamento', '✓')) + '</span></a>';
+        }).join('') + '</div>' +
+        '<p class="barra-legenda"><b>' + prontas + ' de ' + F.ORDEM.length + '</b> etapas prontas' +
+          (prox ? ' · próxima: <a href="folhas/' + prox + '.html">' + esc(P[prox].codigo + ' · ' + P[prox].titulo) + '</a>' : ' · caderno completo') + '</p>' +
+        '<div class="sessao-acoes"><a class="vd-btn vd-btn-amarelo" href="' + (prox ? 'folhas/' + prox + '.html' : 'caderno.html') + '">' + (prox ? 'Continuar' : 'Abrir o caderno completo') + '</a>' +
         '<button type="button" class="vd-btn vd-btn-claro" id="btnSalvar">⤓ Salvar arquivo</button>' +
         '<button type="button" class="vd-btn vd-btn-claro" id="btnAbrir">Abrir outro arquivo</button></div>' +
         '<p class="priv">' + esc(e.texto) + '. Ninguém mais recebe estas respostas.</p>';

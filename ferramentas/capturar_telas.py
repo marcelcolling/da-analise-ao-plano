@@ -153,7 +153,11 @@ def main(saida):
         # erros de JavaScript ficam em window.__erros (o script entra antes dos da página)
         ws.cmd("Page.addScriptToEvaluateOnNewDocument", source="window.__erros=[];addEventListener('error',function(e){window.__erros.push(String(e.message)+' @'+(e.filename||'').split('/').pop()+':'+e.lineno)});")
         ws.cmd("Page.navigate", url=base + "/index.html")
-        time.sleep(1.5)
+        for _ in range(60):   # espera o exemplo carregar antes de pô-lo no navegador
+            v = ws.cmd("Runtime.evaluate", returnByValue=True, expression="!!window.WS_EXEMPLO")
+            if v.get("result", {}).get("value"):
+                break
+            time.sleep(0.25)
         ws.cmd("Runtime.evaluate", expression="localStorage.clear(); localStorage.setItem('ws_caderno_v1', JSON.stringify({formato:'caderno-estrategia', v:1, campos: window.WS_EXEMPLO.campos, atualizado: Date.now(), arquivo: null}))")
         filtro = sys.argv[2:] 
         for nome, pagina, sel, w, h in CAPTURAS:

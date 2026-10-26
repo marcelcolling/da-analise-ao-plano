@@ -29,11 +29,18 @@
     });
     return ks;
   }
+  /* listas finais: itens marcados à mão ([chave, texto]) e itens conferidos pelo caderno ({ r, auto }) */
   function chavesChecklist(esp) {
     var ks = [];
-    esp.secoes.forEach(function (s) { cadaItem(s.itens, function (it) { if (it.t === 'checklist') it.itens.forEach(function (x) { ks.push(x[0]); }); }); });
+    esp.secoes.forEach(function (s) { cadaItem(s.itens, function (it) { if (it.t === 'checklist') it.itens.forEach(function (x) { if (Array.isArray(x)) ks.push(x[0]); }); }); });
     return ks;
   }
+  function autosChecklist(esp) {
+    var fs = [];
+    esp.secoes.forEach(function (s) { cadaItem(s.itens, function (it) { if (it.t === 'checklist') it.itens.forEach(function (x) { if (!Array.isArray(x)) fs.push(x.auto); }); }); });
+    return fs;
+  }
+  function autoOk(f, c) { try { return !!f(c); } catch (e) { return false; } }
   function opcoes(op) { return (op || []).map(function (o) { return Array.isArray(o) ? o : [o, o]; }); }
   function rotuloOpcao(op, v) { var o = opcoes(op).filter(function (x) { return x[0] === v; })[0]; return o ? o[1] : v; }
   function dataBR(v) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : String(v || ''); }
@@ -112,7 +119,7 @@
         '<circle cx="' + (p.x - 112) + '" cy="' + (p.y - bh / 2) + '" r="13"/><text class="s-num" x="' + (p.x - 112) + '" y="' + (p.y - bh / 2 + 4.5) + '" text-anchor="middle">' + a.n + '</text>' +
         textoSvg(l, p.x, p.y - bh / 2 + 24, 17, 'text-anchor="middle"') + '</g>';
     });
-    return '<svg class="svg-sistema" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Mapa do sistema de atividades">' + h + '</svg>';
+    return '<div class="svg-rolagem"><svg class="svg-sistema" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Mapa do sistema de atividades">' + h + '</svg></div>';
   }
 
   function svgMapa(c) {
@@ -152,9 +159,9 @@
       });
     });
     var H = F.PERSPECTIVAS.length * BH;
-    return '<svg class="svg-mapa" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Mapa estratégico">' +
+    return '<div class="svg-rolagem"><svg class="svg-mapa" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Mapa estratégico">' +
       '<defs><marker id="m-ponta" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker></defs>' +
-      h + setas + '</svg>';
+      h + setas + '</svg></div>';
   }
   function analiseMapa(c) {
     var objs = F.objetivos(c), porN = {}, entra = {}, sai = {}, setas = [], invalidas = [], descem = 0;
@@ -328,6 +335,7 @@
     priorizacao: {
       atualizar: function (el, c) {
         var as = F.acoes(c), objs = F.objetivos(c), q = { 'Fazer já': [], 'Planejar': [], 'Encaixar': [], 'Descartar': [] };
+        if (!as.length) { el.innerHTML = '<p class="vazio">Escreva as ações e classifique impacto e esforço: elas aparecem aqui, na matriz, com a conferência do limite de ações em andamento.</p>'; return; }
         as.forEach(function (a) { if (a.prio) q[a.prio].push('<li title="' + esc(a.acao) + '"><b>' + a.n + '</b> ' + esc(a.acao.length > 60 ? a.acao.slice(0, 58) + '…' : a.acao) + '</li>'); });
         var cel = function (nome, sub, cls) { return '<div class="q2-cel ' + cls + '"><span class="q2-nome">' + nome + ' <em>' + q[nome].length + '</em></span><small>' + sub + '</small><ul>' + q[nome].join('') + '</ul></div>'; };
         var andamento = q['Fazer já'].length + q['Planejar'].length;
@@ -424,8 +432,7 @@
       atualizar: function (el, c) {
         var cr = criteriosProntidao(c), ok = cr.every(function (x) { return x[0]; });
         el.innerHTML = '<div class="pronto-cab ' + (ok ? 'ok' : '') + '">' + (ok ? '✔ Pronto para lançar no sistema do parque' : 'Ainda faltam ' + cr.filter(function (x) { return !x[0]; }).length + ' de ' + cr.length + ' critérios') + '</div>' +
-          '<ul class="chk-auto-lista">' + cr.map(function (x) { return aviso(x[0], x[1]); }).join('') + '</ul>' +
-          '<p class="pronto-acoes"><a class="vd-btn vd-btn-roxo" href="' + WS.raiz + 'caderno.html' + (WS.exemplo ? '?exemplo' : '') + '">Abrir o caderno completo e o resumo para o sistema</a></p>';
+          '<ul class="chk-auto-lista">' + cr.map(function (x) { return aviso(x[0], x[1]); }).join('') + '</ul>';
       }
     }
   };
@@ -435,7 +442,9 @@
   function controle(k, def, ph, rotulo) {
     var tipo = def.tipo || 'texto';
     var base = { 'data-k': k, 'aria-label': rotulo || null };
-    if (tipo === 'linha') return '<input type="text"' + attrs(Object.assign(base, { placeholder: ph || null })) + '>';
+    // "linha": uma linha que cresce se o texto for maior (um input cortaria o que não cabe)
+    if (tipo === 'linha') return '<textarea rows="1" class="linha"' + attrs(Object.assign(base, { placeholder: ph || null })) + '></textarea>';
+    if (tipo === 'numerico') return '<input type="text" inputmode="decimal"' + attrs(Object.assign(base, { placeholder: ph || null })) + '>';
     if (tipo === 'numero') return '<input type="number"' + attrs(Object.assign(base, { placeholder: ph || null })) + '>';
     if (tipo === 'data') return '<input type="date"' + attrs(base) + '>';
     if (tipo === 'calc') return '<input type="text" readonly tabindex="-1" class="calc"' + attrs(base) + '>';
@@ -449,22 +458,26 @@
       (it.d ? '<span class="campo-dica">' + esc(it.d) + '</span>' : '') + controle(it.k, it, it.ph, it.r) + '</label></div>';
   }
   var SE = [];   // funções "se" das linhas de tabela (mostrar só quando...)
+  var AUTO = []; // itens das listas finais conferidos pelo caderno
   function htmlTabela(it) {
     var h = it.r ? '<h4 class="tab-titulo">' + esc(it.r) + '</h4>' : '';
     var numerada = it.linhas.every(function (l) { return /^\d+$/.test(l.r) && !l.rotuloDe; });
-    h += '<div class="tab-wrap' + (it.largo ? ' largo' : '') + '"><table class="tab' + (numerada ? ' tab-num' : '') + (it.linhas.some(function (l) { return l.rotuloDe; }) ? ' tab-rot' : '') + '"><thead><tr><th class="tab-canto"></th>';
+    // tabelas progressivas: mostram "minimo" linhas e vão abrindo a seguinte conforme o preenchimento
+    h += '<div class="tab-wrap' + (it.largo ? ' largo' : '') + '"' + (it.minimo ? ' data-minimo="' + it.minimo + '"' : '') + '><table class="tab' + (numerada ? ' tab-num' : '') + (it.linhas.some(function (l) { return l.rotuloDe; }) ? ' tab-rot' : '') + '"><thead><tr><th class="tab-canto"></th>';
     it.cols.forEach(function (c) { h += '<th' + (c.w ? ' style="width:' + c.w + '"' : '') + '>' + esc(c.r) + '</th>'; });
     h += '</tr></thead><tbody>';
     it.linhas.forEach(function (l) {
       var se = l.se ? ' data-se="' + (SE.push(l.se) - 1) + '"' : '';
-      h += '<tr' + se + '><th scope="row"><span class="lin-rot">' + esc(l.r) + '</span>' +
+      h += '<tr' + se + '><th scope="row"><span class="lin-rot"' + (it.item && /^\d+$/.test(l.r) ? ' data-item="' + esc(it.item) + '"' : '') + '>' + esc(l.r) + '</span>' +
         (l.rotuloDe ? '<span class="lin-dica" data-rotulo-de="' + esc(l.rotuloDe) + '"></span>' : '') + (l.d ? '<span class="lin-dica">' + esc(l.d) + '</span>' : '') + '</th>';
       it.cols.forEach(function (c, j) {
         h += '<td data-label="' + esc(c.r) + '">' + controle(l.k[j], c, (l.ph && l.ph[j]) || c.ph, l.r + ' · ' + c.r) + '</td>';
       });
       h += '</tr>';
     });
-    return h + '</tbody></table></div>';
+    return h + '</tbody></table>' +
+      (it.minimo ? '<button type="button" class="btn-linha" data-mais-linha>＋ Mais uma linha</button>' : '') +
+      (it.vazia ? '<p class="tab-vazia" hidden>' + esc(it.vazia) + '</p>' : '') + '</div>';
   }
   function htmlItens(itens) {
     return (itens || []).map(function (it) {
@@ -479,7 +492,9 @@
       if (it.t === 'espelho') return '<div class="espelho" data-espelho="' + esc(it.k) + '" data-vazio="' + esc(it.vazio || 'Ainda não preenchido.') + '"><span class="espelho-rot">' + esc(it.r) + '</span><p></p></div>';
       if (it.t === 'trazer') return '<div class="trazer"><button type="button" class="btn-trazer" data-trazer="' + esc(JSON.stringify(it.mapa)) + '">' + esc(it.r) + '</button></div>';
       if (it.t === 'checklist') return '<ul class="chk-lista">' + it.itens.map(function (c) {
-        return '<li><label><input type="checkbox" data-k="' + esc(c[0]) + '"><span class="chk-caixa" aria-hidden="true"></span><span>' + esc(c[1]) + '</span></label></li>';
+        if (!Array.isArray(c)) return '<li class="chk-conferido" data-auto="' + (AUTO.push(c.auto) - 1) + '"><span class="chk-caixa" aria-hidden="true"></span><span>' + esc(c.r) +
+          '</span><em class="chk-tag">conferido pelo caderno</em></li>';
+        return '<li><label><input type="checkbox" data-k="' + esc(c[0]) + '"><span class="chk-caixa" aria-hidden="true"></span><span>' + esc(c[1]) + '</span><em class="chk-tag chk-tag-mao">marque você</em></label></li>';
       }).join('') + '</ul>';
       if (it.t === 'especial') return '<div class="especial esp-' + esc(it.nome) + '" data-esp="' + esc(it.nome) + '"' + (it.n ? ' data-n="' + it.n + '"' : '') + '></div>';
       return '';
@@ -489,7 +504,8 @@
   function montar(esp) {
     var idx = F.ORDEM.indexOf(esp.id), ant = P[F.ORDEM[idx - 1]], prox = P[F.ORDEM[idx + 1]];
     var guia = F.GUIAS[esp.guia];
-    var urlP = function (e) { return WS.raiz + 'folhas/' + e.id + '.html'; };
+    var qs = WS.exemplo ? '?exemplo' : '';   // no modo exemplo, a navegação continua no exemplo
+    var urlP = function (e) { return WS.raiz + 'folhas/' + e.id + '.html' + qs; };
     var h = '<header class="e-hero"><div class="e-wrap">' +
       '<span class="e-tag"><i></i>' + esc(esp.aula + ' · ' + esp.etapa) + '</span>' +
       '<h1><span class="e-cod">' + esc(esp.codigo) + '</span>' + esc(esp.titulo) + '</h1>' +
@@ -497,33 +513,41 @@
       '<p class="e-resumo">' + esc(esp.resumo) + '</p>' +
       '<div class="e-meta"><span id="progGeral"></span><span id="empresaMeta"></span></div>' +
       '<div class="e-acoes no-print">' +
-        '<button type="button" class="vd-btn vd-btn-amarelo" data-salvar-arquivo>⤓ Salvar arquivo</button>' +
+        (guia ? '<a class="vd-btn vd-btn-amarelo" href="' + esc(WS.raiz + guia.url) + '" target="_blank" rel="noopener">📖 Abrir o ' + esc(guia.nome.replace(/ · .*/, '').replace('Guia de uso do caderno', 'guia de uso')) + '</a>' : '') +
+        (WS.exemplo ? '' : '<a class="vd-btn vd-btn-claro" href="?exemplo" target="_blank" rel="noopener">◎ Ver a folha da AgroSense (nova aba)</a>') +
         '<button type="button" class="vd-btn vd-btn-claro" id="btnPdf">Salvar esta folha em PDF</button>' +
-        (WS.exemplo ? '' : '<a class="vd-btn vd-btn-claro" href="?exemplo">◎ Ver esta folha preenchida pela AgroSense</a>') +
       '</div></div></header>';
     h += '<nav class="e-nav no-print" aria-label="Seções"><div class="e-wrap"><div class="e-nav-in">' + esp.secoes.map(function (s) {
       return '<a href="#s-' + esc(s.id) + '" data-sec="' + esc(s.id) + '"><b>' + esc(s.n) + '</b><span>' + esc(s.nav || s.titulo.replace(/[:…].*$/, '')) + '</span><i class="sec-prog"></i></a>';
     }).join('') + '</div></div></nav>';
     h += '<main class="e-wrap e-main">';
     h += '<ol class="fluxo no-print" aria-label="Como trabalhar nesta etapa">' +
-      '<li><span class="fluxo-n">1</span><div><b>Entenda</b><span>Acompanhe a exposição. Para consultar: ' + (guia ? '<a href="' + esc(WS.raiz + guia.url) + '">📖 ' + esc(guia.nome) + '</a>' : 'os guias') + '.</span></div></li>' +
-      '<li><span class="fluxo-n">2</span><div><b>Aplique</b><span>Logo depois, cada seção abaixo é um "mão na massa" na sua empresa. Antes de escrever, veja como a AgroSense fez.</span></div></li>' +
-      '<li><span class="fluxo-n">3</span><div><b>Confira</b><span>Feche com a lista "pronta quando…" e salve o arquivo.</span></div></li></ol>';
-    esp.secoes.forEach(function (s) {
+      '<li><span class="fluxo-n">1</span><span><b>Entenda</b> com a exposição; o guia fica aberto para consulta.</span></li>' +
+      '<li><span class="fluxo-n">2</span><span><b>Aplique</b> seção por seção na sua empresa, vendo antes como a AgroSense fez.</span></li>' +
+      '<li><span class="fluxo-n">3</span><span><b>Confira</b> a lista final e salve o arquivo.</span></li></ol>';
+    var total = esp.secoes.length;
+    esp.secoes.forEach(function (s, i) {
       var temEx = EX && !WS.exemplo && s.exemplo !== false;
-      h += '<section class="e-secao' + (s.n === '✓' || s.n === '★' ? ' e-secao-chk' : '') + '" id="s-' + esc(s.id) + '" data-sec="' + esc(s.id) + '">' +
-        '<div class="e-secao-cab"><span class="e-secao-n">' + esc(s.n) + '</span><div class="e-secao-tit">' + (s.folha ? '<span class="e-alimenta">' + esc(s.folha) + '</span>' : '') + '<h2>' + esc(s.titulo) + '</h2></div></div>' +
+      var final = s.n === '✓' || s.n === '★';
+      var apoio = (s.guia ? '<a class="link-leitura" href="' + esc(urlGuia(s.guia)) + '" target="_blank" rel="noopener">📖 No ' + esc(F.GUIAS[s.guia[0]].nome.replace(/ · .*/, '').replace('Guia de uso do caderno', 'guia de uso')) + ' ↗</a>' : '') +
+        (temEx ? '<details class="ex" data-ex="' + esc(s.id) + '"><summary><span class="ex-ico" aria-hidden="true">◎</span>Ver como a AgroSense fez</summary><div class="ex-corpo"></div></details>' : '');
+      h += '<section class="e-secao' + (final ? ' e-secao-chk' : '') + '" id="s-' + esc(s.id) + '" data-sec="' + esc(s.id) + '">' +
+        '<div class="e-secao-cab"><span class="e-secao-n">' + esc(s.n) + '</span><div class="e-secao-tit"><span class="e-alimenta">' +
+          esc((s.folha ? s.folha + ' · ' : '') + (final ? 'para fechar' : 'passo ' + (i + 1) + ' de ' + total)) + '</span><h2>' + esc(s.titulo) + '</h2></div></div>' +
         '<div class="e-secao-conteudo">' +
         (s.dica ? '<p class="e-dica">' + esc(s.dica) + '</p>' : '') +
-        (s.guia ? '<a class="link-leitura" href="' + esc(urlGuia(s.guia)) + '" target="_blank" rel="noopener">📖 No ' + esc(F.GUIAS[s.guia[0]].nome.replace(/ · .*/, '').replace('Guia de uso do caderno', 'guia de uso')) + ' ↗</a>' : '') +
+        (apoio ? '<div class="sec-apoio no-print">' + apoio + '</div>' : '') +
         (s.passos ? '<div class="passos"><span class="passos-rot">✎ Mão na massa</span><ol>' + s.passos.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ol></div>' : '') +
-        (temEx ? '<details class="ex" data-ex="' + esc(s.id) + '"><summary><span class="ex-ico" aria-hidden="true">◎</span>Ver como a AgroSense fez</summary><div class="ex-corpo"></div></details>' : '') +
         '<div class="e-secao-corpo">' + htmlItens(s.itens) + '</div></div></section>';
     });
+    h += '<aside class="proximo no-print"><div><span class="proximo-rot">Esta folha</span><p id="proximoStatus"></p></div><div class="proximo-acoes">' +
+      (WS.exemplo ? '' : '<button type="button" class="vd-btn vd-btn-ghost" data-salvar-arquivo>⤓ Salvar arquivo</button>') +
+      (prox ? '<a class="vd-btn vd-btn-roxo" href="' + esc(urlP(prox)) + '">Próximo: ' + esc(prox.codigo + ' · ' + prox.titulo) + ' →</a>'
+        : '<a class="vd-btn vd-btn-roxo" href="' + WS.raiz + 'caderno.html' + qs + '">Abrir o caderno completo →</a>') + '</div></aside>';
     h += '<nav class="e-rodape no-print">' +
       (ant ? '<a href="' + esc(urlP(ant)) + '">← ' + esc(ant.codigo + ' · ' + ant.titulo) + '</a>' : '<a href="' + WS.raiz + 'index.html#trilha">← Voltar à trilha</a>') +
-      '<a class="e-plano" href="' + WS.raiz + 'caderno.html' + (WS.exemplo ? '?exemplo' : '') + '">Caderno completo</a>' +
-      (prox ? '<a href="' + esc(urlP(prox)) + '">' + esc(prox.codigo + ' · ' + prox.titulo) + ' →</a>' : '<a href="' + WS.raiz + 'caderno.html">Caderno completo →</a>') +
+      '<a href="' + WS.raiz + 'index.html#trilha">Trilha</a>' +
+      '<a href="' + WS.raiz + 'caderno.html' + qs + '">Caderno completo</a>' +
       '</nav></main>';
     document.getElementById('app').innerHTML = h;
     var rel = document.createElement('div');
@@ -651,6 +675,22 @@
         el.textContent = v ? (el.dataset.prefixo || '') + v : '';
       });
       app.querySelectorAll('tr[data-se]').forEach(function (tr) { tr.hidden = !SE[Number(tr.dataset.se)](c); });
+      app.querySelectorAll('.tab-wrap').forEach(function (w) {
+        var trs = Array.prototype.slice.call(w.querySelectorAll('tbody tr'));
+        if (w.dataset.minimo) {
+          var ultima = -1;
+          trs.forEach(function (tr, i) {
+            if (Array.prototype.some.call(tr.querySelectorAll('[data-k]'), function (el) { return !el.classList.contains('calc') && !vazio(el.type === 'checkbox' ? el.checked : el.value); })) ultima = i;
+          });
+          var n = Math.min(trs.length, Math.max(Number(w.dataset.minimo), ultima + 2, w._abertas || 0));
+          trs.forEach(function (tr, i) { tr.hidden = i >= n; });
+          var b = w.querySelector('[data-mais-linha]');
+          if (b) b.hidden = n >= trs.length;
+        }
+        var vz = w.querySelector('.tab-vazia');
+        if (vz) { var nenhuma = trs.every(function (tr) { return tr.hidden; }); vz.hidden = !nenhuma; w.querySelector('table').hidden = nenhuma; }
+      });
+      app.querySelectorAll('[data-auto]').forEach(function (li) { li.classList.toggle('ok', autoOk(AUTO[Number(li.dataset.auto)], c)); });
       app.querySelectorAll('[data-espelho]').forEach(function (el) {
         var v = c[el.dataset.espelho], p = el.querySelector('p');
         p.textContent = v || el.dataset.vazio;
@@ -666,7 +706,17 @@
     }
     function progresso(c) {
       var feitos = progKs.filter(function (k) { return !vazio(c[k]); }).length;
-      var chk = chkKs.filter(function (k) { return c[k]; }).length;
+      var autos = autosChecklist(esp), autosOk = autos.filter(function (f) { return autoOk(f, c); }).length;
+      var chk = chkKs.filter(function (k) { return c[k]; }).length + autosOk, chkTot = chkKs.length + autos.length;
+      var tudo = chkTot && chk === chkTot && (!esp.pronta || autoOk(esp.pronta, c));
+      var ps = document.getElementById('proximoStatus');
+      if (ps) {
+        ps.className = tudo ? 'ok' : '';
+        ps.textContent = !feitos ? 'Ainda não preenchida. Comece pelo passo 1.'
+          : tudo ? '✔ Pronta: todos os itens da lista final estão ok.' + (WS.exemplo ? '' : ' Salve o arquivo e siga em frente.')
+          : chkTot && chk === chkTot ? 'A lista final está ok, mas ainda há critérios de "pronto para o sistema" em aberto (acima).'
+          : chkTot ? 'Lista final: ' + chk + ' de ' + chkTot + ' itens ok. Dá para seguir e voltar depois.' : feitos + ' campos preenchidos.';
+      }
       esp.secoes.forEach(function (s) {
         var sec = document.getElementById('s-' + s.id), n = 0;
         sec.querySelectorAll('[data-k]').forEach(function (el) { if (!el.classList.contains('calc') && !vazio(el.type === 'checkbox' ? el.checked : el.value)) n++; });
@@ -675,7 +725,7 @@
       });
       var pg = document.getElementById('progGeral');
       if (pg) pg.textContent = (feitos ? feitos + ' campo' + (feitos === 1 ? '' : 's') + ' preenchido' + (feitos === 1 ? '' : 's') : 'Nada preenchido ainda') +
-        (chkKs.length ? ' · lista final: ' + chk + ' de ' + chkKs.length : '');
+        (chkTot ? ' · lista final: ' + chk + ' de ' + chkTot : '');
     }
     function abrirMais() {
       app.querySelectorAll('details.mais').forEach(function (d) {
@@ -712,6 +762,17 @@
     app.addEventListener('change', atualizarVisual);
     app.addEventListener('click', function (e) {
       if (e.target.closest('[data-salvar-arquivo]')) { WS.salvarArquivo(); return; }
+      var ml = e.target.closest('[data-mais-linha]');
+      if (ml) {
+        var w = ml.closest('.tab-wrap');
+        w._abertas = w.querySelectorAll('tbody tr:not([hidden])').length + 1;
+        atualizarVisual();
+        var nova = w.querySelectorAll('tbody tr:not([hidden])');
+        var campo = nova[nova.length - 1] && nova[nova.length - 1].querySelector('textarea, input, select');
+        if (campo) campo.focus();
+        WS.agendarAlturas();
+        return;
+      }
       var b = e.target.closest('[data-trazer]');
       if (b) {
         var mapa = JSON.parse(b.dataset.trazer), c = todos(), n = 0;
@@ -734,7 +795,7 @@
         var s = esp.secoes.filter(function (x) { return x.id === d.dataset.ex; })[0];
         var corpo = relatorioItens(s.itens, exemplo());
         d.querySelector('.ex-corpo').innerHTML = (corpo || '<p class="vazio">A AgroSense não preencheu esta parte.</p>') +
-          '<p class="ex-nota">A AgroSense é um modelo de nível de detalhe, não uma resposta certa. <a href="?exemplo#s-' + esc(s.id) + '">Ver a folha inteira da AgroSense →</a></p>';
+          '<p class="ex-nota">A AgroSense é um modelo de nível de detalhe, não uma resposta certa. <a href="?exemplo#s-' + esc(s.id) + '" target="_blank" rel="noopener">Ver esta parte na folha da AgroSense (nova aba) ↗</a></p>';
       });
     });
 
@@ -768,12 +829,13 @@
   }
 
   /* ================= estado de cada página (para a página inicial) ================= */
-  function status(id, c) {
-    var esp = P[id], ks = chavesProgresso(esp), chk = chavesChecklist(esp);
-    var n = ks.filter(function (k) { return !vazio(c[k]); }).length, m = chk.filter(function (k) { return c[k]; }).length;
-    var estado = !n && !m ? 'vazia' : chk.length && m === chk.length ? 'pronta' : 'andamento';
-    return { campos: n, chk: m, chkTotal: chk.length, estado: estado,
-      texto: estado === 'vazia' ? 'Não iniciada' : estado === 'pronta' ? '✓ Pronta' : 'Em andamento · ' + n + ' campo' + (n === 1 ? '' : 's') + (chk.length ? ' · lista ' + m + '/' + chk.length : '') };
+  function status(id, campos) {
+    var esp = P[id], ks = chavesProgresso(esp), chk = chavesChecklist(esp), autos = autosChecklist(esp), c = completar(campos);
+    var n = ks.filter(function (k) { return !vazio(c[k]); }).length, marcados = chk.filter(function (k) { return c[k]; }).length;
+    var m = marcados + (n ? autos.filter(function (f) { return autoOk(f, c); }).length : 0), tot = chk.length + autos.length;
+    var estado = !n && !marcados ? 'vazia' : tot && m === tot && (!esp.pronta || autoOk(esp.pronta, c)) ? 'pronta' : 'andamento';
+    return { campos: n, chk: m, chkTotal: tot, estado: estado,
+      texto: estado === 'vazia' ? 'Não iniciada' : estado === 'pronta' ? '✓ Pronta' : 'Em andamento · lista final ' + m + ' de ' + tot };
   }
 
   /* ================= caderno completo ================= */
