@@ -276,6 +276,9 @@
     document.addEventListener('click', function (e) {
       if (!menu.hidden && !e.target.closest('.vd-right')) { menu.hidden = true; bm.setAttribute('aria-expanded', 'false'); }
     });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !menu.hidden) { menu.hidden = true; bm.setAttribute('aria-expanded', 'false'); bm.focus(); }
+    });
     atualizarStatus();
     return topbar;
   }
@@ -358,6 +361,8 @@
           'Cada folha tem o botão <strong>Salvar esta folha em PDF</strong>. O <strong>Caderno completo</strong> junta tudo e abre com o resumo para lançar no sistema do parque. Na janela de impressão, escolha "Salvar como PDF".') +
         item('5', 'Veja o exemplo antes de escrever',
           'Cada passo tem o botão <strong>Ver como a AgroSense fez</strong>, com o nível de detalhe esperado. O caderno inteiro da AgroSense está em <strong>Caderno › Caderno de exemplo</strong>.') +
+        item('6', 'Feche cada folha com a lista final',
+          'Os itens marcados <em>conferido pelo caderno</em> ficam verdes sozinhos quando a folha está completa; os marcados <em>marque você</em> pedem o julgamento da mesa. As tabelas longas começam com poucas linhas e abrem a seguinte conforme você preenche (ou em <strong>＋ Mais uma linha</strong>).') +
         item('!', 'Computador compartilhado',
           'Ao terminar num computador que outras pessoas usam, salve o arquivo e use <strong>Caderno › Apagar o caderno deste navegador</strong>. Navegação anônima apaga tudo ao fechar a janela: nela, salve o arquivo com frequência.') +
       '</ol>' +

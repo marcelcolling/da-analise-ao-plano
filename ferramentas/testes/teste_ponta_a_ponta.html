@@ -11,10 +11,19 @@ const log = [];
 const ok = (c, m) => { log.push((c ? 'PASS ' : 'FAIL ') + m); document.getElementById('log').textContent = log.join('\n') + '\n(em andamento)'; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const fr = document.getElementById('fr');
-const carregar = url => new Promise(r => {
+// todos os scripts da página chegaram e rodaram? (no ambiente de teste, um pedido local às vezes se perde;
+// o navegador pula o script e a página fica incompleta: aí a página é recarregada, até 3 vezes)
+const MARCAS = { 'config.js': 'WS_CONFIG', 'exemplo-agrosense.js': 'WS_EXEMPLO', 'portal.js': 'WS', 'folhas.js': 'WS_F', 'motor.js': 'WS_M' };
+const scriptsOk = w => Array.from(w.document.querySelectorAll('script[src]')).every(s => {
+  const n = s.getAttribute('src').split('/').pop();
+  return n === 'guia.js' ? w.document.body.classList.contains('com-topbar') : (!MARCAS[n] || !!w[MARCAS[n]]);
+});
+const carregar = (url, tentativa = 1) => new Promise(r => {
   fr.onload = async () => {
     const w = fr.contentWindow; w.alert = () => {}; w.confirm = () => true;
-    for (let i = 0; i < 120 && !(w.WS && w.document.querySelector('.vd-topbar')); i++) await sleep(250);
+    let i = 0;
+    for (; i < 24 && !(w.WS && w.document.querySelector('.vd-topbar') && scriptsOk(w)); i++) await sleep(250);
+    if (i === 24 && tentativa < 4) { r(await carregar(url, tentativa + 1)); return; }
     await sleep(400);
     r(w);
   };
@@ -39,7 +48,10 @@ const salvo = async (w) => { w.WS_PAGINA.salvarAgora(); await sleep(100); return
 
     /* ---- página inicial vazia ---- */
     let w = await carregar('/index.html');
-    ok(!w.WS.temDados() && q(w, '#cadernoCard').textContent.includes('Comece pela Folha 0'), 'início: caderno vazio, sem herdar dados dos outros portais');
+    const card0 = q(w, '#cadernoCard').textContent;
+    ok(!w.WS.temDados() && card0.includes('Comece pela Folha 0'), 'início: caderno vazio, sem herdar dados dos outros portais' +
+      (w.WS.temDados() || !card0.includes('Comece') ? ' [temDados=' + w.WS.temDados() + ' url=' + w.location.href + ' cartão=' + card0.slice(0, 80) + ' armazenado=' + String(localStorage.getItem('ws_caderno_v1')).slice(0, 80) + ' WS_M=' + typeof w.WS_M + ' WS_F=' + typeof w.WS_F +
+      ' scripts=' + w.performance.getEntriesByType('resource').filter(e => /\.js/.test(e.name)).map(e => e.name.split('/').pop().split('?')[0] + ':' + (e.responseStatus || '?') + ':' + e.transferSize).join(',') + ']' : ''));
     ok(w.document.querySelectorAll('[data-status]').length === 8 && q(w, '[data-status="bloco4"]').textContent === 'Não iniciada', 'início: as 8 etapas com estado "Não iniciada"');
     ok(q(w, '.vd-status').dataset.estado === 'local', 'barra: caderno vazio');
 

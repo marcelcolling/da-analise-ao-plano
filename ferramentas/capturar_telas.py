@@ -62,9 +62,43 @@ CAPTURAS = [
 ]
 
 
+# todos os scripts da página chegaram e rodaram? (no ambiente de teste, um pedido local às vezes se perde)
+SCRIPTS_OK = "(function(){var m={'config.js':'WS_CONFIG','exemplo-agrosense.js':'WS_EXEMPLO','portal.js':'WS','folhas.js':'WS_F','motor.js':'WS_M'};return Array.prototype.every.call(document.querySelectorAll('script[src]'),function(s){var n=s.getAttribute('src').split('/').pop();return n==='guia.js'?document.body.classList.contains('com-topbar'):(!m[n]||!!window[m[n]]);});})()"
+
+
+def servir(porta):
+    """Sobe o servidor local (servidor_local.py) com uma cópia do site e devolve o processo."""
+    return subprocess.Popen([sys.executable, str(RAIZ / "ferramentas" / "servidor_local.py"), str(porta), str(copia_do_site())],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def copia_do_site():
+    """Copia o site para uma pasta temporária fora do OneDrive e devolve o caminho.
+    Servindo direto da pasta do OneDrive, o http.server às vezes entregou um .js cortado (arquivo em sincronização),
+    e a página quebrava no teste sem defeito nenhum no site."""
+    import shutil
+    destino = pathlib.Path(tempfile.mkdtemp(prefix="ws-site-"))
+    for nome in ("index.html", "caderno.html", ".nojekyll"):
+        if (RAIZ / nome).exists():
+            shutil.copy2(RAIZ / nome, destino / nome)
+    for pasta in ("assets", "folhas", "guias"):
+        shutil.copytree(RAIZ / pasta, destino / pasta)
+    shutil.copytree(RAIZ / "ferramentas" / "testes", destino / "ferramentas" / "testes", ignore=shutil.ignore_patterns("__pycache__", "*.py", "*.ps1"))
+    return destino
+
+
 def encerrar(proc):
     """Encerra o processo e todos os filhos (no Windows, edge.kill() deixa os processos filhos do Edge vivos)."""
     subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True)
+    # O Edge às vezes entrega o navegador a outro processo e o primeiro sai: sobra um Edge órfão, com a porta de
+    # depuração ocupada e páginas antigas em cache (a execução seguinte conversaria com ele). Encerra também
+    # quem usa o mesmo perfil temporário.
+    args = proc.args if isinstance(proc.args, list) else []
+    perfil = next((str(a).split("=", 1)[1] for a in args if str(a).startswith("--user-data-dir=")), None)
+    if perfil:
+        subprocess.run(["powershell", "-NoProfile", "-Command",
+                        "Get-CimInstance Win32_Process -Filter \"Name='msedge.exe'\" | Where-Object { $_.CommandLine -like '*" + perfil +
+                        "*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"], capture_output=True)
 
 
 class WS:
@@ -129,8 +163,7 @@ class WS:
 def main(saida):
     saida = pathlib.Path(saida)
     saida.mkdir(parents=True, exist_ok=True)
-    site = subprocess.Popen([sys.executable, "-m", "http.server", str(PORTA_SITE), "--bind", "127.0.0.1"],
-                            cwd=RAIZ, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    site = servir(PORTA_SITE)
     perfil = tempfile.mkdtemp(prefix="ws-cdp-")
     edge = subprocess.Popen([EDGE, "--headless=new", "--disable-gpu", "--no-first-run", "--hide-scrollbars",
                              f"--remote-debugging-port={PORTA_CDP}", f"--user-data-dir={perfil}", "about:blank"],
@@ -168,7 +201,7 @@ def main(saida):
             ws.cmd("Page.navigate", url=base + pagina + ("&" if "?" in pagina else "?") + "x=" + marca)
             # espera a página e o portal.js terminarem (barra superior montada)
             for k in range(80):
-                pronto = ws.cmd("Runtime.evaluate", returnByValue=True, expression="JSON.stringify([location.search.indexOf('" + marca + "')>=0, document.readyState, !!document.querySelector('.vd-topbar'), document.fonts.status])")
+                pronto = ws.cmd("Runtime.evaluate", returnByValue=True, expression="JSON.stringify([location.search.indexOf('" + marca + "')>=0, document.readyState, !!document.querySelector('.vd-topbar') && " + SCRIPTS_OK + ", document.fonts.status])")
                 v = json.loads(pronto.get("result", {}).get("value") or "[false]")
                 if v[0] and v[1] == "complete" and v[2] and v[3] == "loaded":
                     break

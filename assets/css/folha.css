@@ -507,3 +507,15 @@ textarea.linha { min-height: 44px; resize: none; overflow: hidden; }
   .esp-sistema .svg-rolagem::after, .esp-mapa .svg-rolagem::after { content: "↔ arraste para o lado para ver o desenho inteiro"; display: block; font-size: 0.74rem; color: var(--muted); margin-top: 0.3rem; }
 }
 @media print { .svg-rolagem::after { display: none !important; } .svg-rolagem svg { min-width: 0 !important; } }
+
+/* caderno completo e exemplos na tela: capa com um só h1 por página; tabelas largas rolam no celular */
+.r-capa .r-capa-tit { font-family: var(--display); font-weight: 700; color: var(--az); font-size: 1.9rem; line-height: 1.15; margin: 0.4rem 0 0.2rem; }
+.r-tab-wrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0.2rem 0 1rem; }
+.r-tab-wrap > .r-tab { margin: 0; }
+@media (max-width: 640px) {
+  .plano-doc .r-tab, .ex-corpo .r-tab { min-width: 520px; }
+  .plano-doc .r-obj .r-tab { min-width: 0; }
+  .plano-doc .r-grade, .plano-doc .r-grade-3, .ex-corpo .r-grade, .ex-corpo .r-grade-3, .plano-doc .r-capa-dados { grid-template-columns: 1fr; }
+  .plano-doc .r-capa .r-capa-tit { font-size: 1.5rem; }
+}
+@media print { .r-tab-wrap { overflow: visible; } }

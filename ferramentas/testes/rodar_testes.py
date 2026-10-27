@@ -1,6 +1,6 @@
 """
 Roda o teste de ponta a ponta (teste_ponta_a_ponta.html) num Edge headless, em tempo real,
-controlado pelo protocolo de depuração (CDP), contra o próprio site servido localmente (python -m http.server).
+controlado pelo protocolo de depuração (CDP), contra o próprio site servido localmente (ferramentas/servidor_local.py, com uma cópia do site).
 Não há servidor de dados a simular: o caderno vive no localStorage do navegador de teste (perfil temporário).
 Saída: uma linha PASS/FAIL por verificação; código de saída 1 se houver falha.
 
@@ -12,6 +12,7 @@ o teste recomeça do zero, com servidor e navegador novos.
 """
 import json
 import pathlib
+import random
 import subprocess
 import sys
 import tempfile
@@ -21,16 +22,18 @@ import urllib.request
 AQUI = pathlib.Path(__file__).resolve().parent
 RAIZ = AQUI.parent.parent
 sys.path.insert(0, str(AQUI.parent))
-from capturar_telas import WS, EDGE, encerrar  # noqa: E402
+from capturar_telas import WS, EDGE, encerrar, servir  # noqa: E402
 
-PORTA_SITE, PORTA_CDP, LIMITE, ARRANQUE, TENTATIVAS = 8766, 9337, 300, 30, 3
+# portas sorteadas: uma execução nunca conversa com o navegador ou o servidor de outra
+PORTA_SITE = 8500 + random.randrange(100)
+PORTA_CDP = PORTA_SITE + 700
+LIMITE, ARRANQUE, TENTATIVAS = 600, 90, 3   # margem para as páginas recarregadas quando um script se perde
 
 
 def rodar(tentativa):
     """Uma tentativa. Devolve (linhas, terminou, travou_no_inicio)."""
     porta_site, porta_cdp = PORTA_SITE + 10 * (tentativa - 1), PORTA_CDP + 10 * (tentativa - 1)
-    srv = subprocess.Popen([sys.executable, "-m", "http.server", str(porta_site), "--bind", "127.0.0.1"], cwd=RAIZ,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    srv = servir(porta_site)
     edge = subprocess.Popen([EDGE, "--headless=new", "--disable-gpu", "--no-first-run", f"--remote-debugging-port={porta_cdp}",
                              f"--user-data-dir={tempfile.mkdtemp(prefix='ws-teste-')}", "about:blank"],
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

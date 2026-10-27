@@ -41,7 +41,8 @@ assets/js/motor.js         MOTOR: monta a página, lê/escreve campos, component
 assets/js/exemplo-agrosense.js  caderno da AgroSense (mesmo formato do .json)
 assets/js/guia.js          comportamento das páginas de guia (sumário, progresso)
 assets/css/portal.css · folha.css · guia.css
-ferramentas/               gerar_guias.py, conferir_integridade.py, capturar_telas.py, testes/
+ferramentas/               gerar_guias.py, conferir_integridade.py, verificar_paginas.py (auditoria das páginas renderizadas e PDFs),
+                           capturar_telas.py, servidor_local.py (servidor das ferramentas), testes/
 ```
 
 ## Como funciona o salvamento (não alterar sem necessidade)
@@ -82,6 +83,8 @@ A trilha pede que as Folhas 5A, 5B, 6 e 7 tenham os mesmos campos do sistema do 
 - **Heredoc no Git Bash:** `'\\n'` dentro de código Python escrito por heredoc virou quebra de linha real e quebrou o executor do teste (expressão JS inválida, "o Edge travou"). Prefira a ferramenta de edição para código com escapes.
 - `python` no Windows não entende caminhos `/c/...` do Git Bash: copie para `$TEMP` ou use caminho `C:/...`.
 - **Edge headless:** processos órfãos acumulam e prendem portas. Limpe só os de teste: `msedge.exe` com `--headless` e perfil em `AppData\Local\Temp` (nunca o Edge normal). Use `capturar_telas.py`/`rodar_testes.py`, que controlam o Edge pelo CDP e recarregam se a página travar.
+- **Edge órfão com cache antigo:** o Edge às vezes passa o navegador para outro processo e o primeiro sai; o `taskkill` não pega o órfão, que fica com a porta de depuração. Na execução seguinte, a ferramenta conversava com ele e via a versão **antiga** das páginas (falsos defeitos). `encerrar()` agora também mata quem usa o mesmo perfil temporário, e as ferramentas sorteiam as portas.
+- **Pedidos locais que se perdem:** neste ambiente, ~10% dos pedidos ao servidor local estouram o tempo (mesmo fora do navegador, mesmo com fila maior). O navegador pula o script que não chegou e a página fica incompleta (ex.: `WS_M` indefinido, cartão da home vazio). Não é defeito do site. As ferramentas servem uma cópia do site fora do OneDrive (`servidor_local.py`, sem cache, fila de 128) e só consideram a página pronta quando todos os scripts rodaram (`SCRIPTS_OK` em `capturar_telas.py`; `scriptsOk` no teste); se não, recarregam. Se um teste falhar só no começo, de forma intermitente, rode de novo antes de procurar defeito.
 - **PDF:** `Page.printToPDF` respeita `Emulation.setEmulatedMedia`; zere (`media=''`). O relatório da folha (`#relatorio`) fica fora de `#app`, porque a impressão esconde `#app`. Para ver: `pymupdf` (já instalado).
 - **`.ps1` com acentos:** grave em UTF-8 **com BOM** (`publicar.ps1` já está).
 - A pasta está no OneDrive: se o git reclamar de arquivo bloqueado, espere a sincronização.
@@ -90,8 +93,9 @@ A trilha pede que as Folhas 5A, 5B, 6 e 7 tenham os mesmos campos do sistema do 
 
 1. `python ferramentas/gerar_guias.py` e `python ferramentas/conferir_integridade.py` (Git Bash: `PYTHONIOENCODING=utf-8`) → **TUDO OK** (texto íntegro dos 8 guias, links e âncoras, privacidade).
 2. `.\ferramentas\testes\rodar_testes.ps1` → `FAIL/ERRO: 0` (76 verificações hoje: prefixos, salvamento, XSS, referências entre folhas, cálculos, SVGs, listas finais conferidas pelo caderno, linhas progressivas, PDF, arquivo, abrir arquivo, modo exemplo e sua navegação, AgroSense "pronta" nas 8 etapas, outra aba, apagar). Leva cerca de 1 minuto.
-3. `python ferramentas/capturar_telas.py <pasta>` e olhar as capturas (1366px e 520px; o script avisa erro de JavaScript e página mais larga que a tela).
-4. `git add -A; git commit; git push` e conferir o site (cache: `?x=aleatório`).
+3. `python ferramentas/verificar_paginas.py` → **TUDO OK**. Audita as páginas **renderizadas** (as folhas são montadas por JavaScript, o conferidor estático não as vê) em 3 estados (vazio, preenchido, `?exemplo`) e 2 larguras (1366 e 500px): erros de JS, página mais larga que a tela, ids repetidos, um só h1, campos sem rótulo, botões sem texto, "undefined/NaN" na tela, links e âncoras gerados por JS; e gera os 9 PDFs, conferindo que nada de orientação ("Mão na massa", "marque você"…) vaza para eles. Leva uns 5 minutos.
+4. `python ferramentas/capturar_telas.py <pasta>` e olhar as capturas (1366px e 520px; o script avisa erro de JavaScript e página mais larga que a tela).
+5. `git add -A; git commit; git push` e conferir o site (cache: `?x=aleatório`).
 
 ## Pendências conhecidas
 

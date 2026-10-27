@@ -19,7 +19,7 @@ window.WS_EXEMPLO = {
     f0_hoje_para: 'produtores médios de grãos e algumas cooperativas',
     f0_fut_reconhecidos: 'ser a parceira de agricultura de precisão das cooperativas de grãos do estado',
     f0_fut_numero: 'R$ 6 milhões de faturamento, com 70% de receita recorrente',
-    f0_chk1: true, f0_chk2: true, f0_chk3: true,
+    f0_chk1: true, f0_chk3: true,
 
     /* Folha 1 */
     f1_o1: 'Linhas de crédito para agricultura de precisão', f1_o1_ev: 'Cooperativas relatam associados buscando financiar tecnologia',
@@ -41,7 +41,7 @@ window.WS_EXEMPLO = {
     f2_wo1: 'Padronizar a implantação para atender cooperativas em escala', f2_wo1_orig: 'f2 + O2',
     f2_wa1: 'Migrar a receita para assinatura, reduzindo a exposição ao câmbio do hardware', f2_wa1_orig: 'f1 + A2',
     f2_critico: 'A outra empresa marcou F3 com "?": 30% mais barato que o quê? Acrescentamos o importado equivalente como referência.',
-    f2_chk1: true, f2_chk2: true, f2_chk3: true, f2_chk4: true, f2_chk5: true,
+    f2_chk1: true, f2_chk3: true, f2_chk4: true,
 
     /* Folha 3A */
     f3a_gestao_est: 'Estruturar', f3a_gestao_ev: 'Planejamento anual existe, mas sem metas por área', f3a_gestao_prox: 'Definir indicadores e metas táticas por área',
@@ -65,8 +65,7 @@ window.WS_EXEMPLO = {
     f3b_at6: 'Plataforma que integra máquinas de qualquer marca', f3b_at6_liga: '4',
     f3b_tradeoff: 'vender sensores avulsos a pequenos produtores e atender culturas fora de grãos',
     f3b_imit_uma: 'Sim: o relatório mensal é fácil de copiar',
-    f3b_imit_conj: 'Difícil: exige agrônomos na equipe, base de 3 safras, preço por hectare e plataforma independente de marca, tudo junto',
-    f3_chk1: true, f3_chk2: true, f3_chk3: true, f3_chk4: true, f3_chk5: true, f3_chk6: true,
+    f3b_imit_conj: 'Difícil: exige agrônomos na equipe, base de 3 safras, preço por hectare e plataforma independente de marca, tudo junto', f3_chk4: true, f3_chk5: true, f3_chk6: true,
 
     /* Folha 4 */
     f4_bcg1_item: 'Plataforma por assinatura para cooperativas', f4_bcg1_merc: 'Rápido', f4_bcg1_pos: 'Forte', f4_bcg1_dec: 'Investir', f4_bcg1_obs: 'Renovação de 100%, base de 3 safras',
@@ -77,8 +76,7 @@ window.WS_EXEMPLO = {
     f4_ans_hoje: 'Penetração de mercado', f4_ans_vetor: 'Penetração de mercado',
     f4_ans_just: 'A Operação está em "Entender" (implantação de 21 dias): antes de ir para outros estados, é preciso conseguir implantar em escala.',
     f4_int_direcao: 'Reforça a direção de POS "parceira das cooperativas" e a direção de EO "padronizar a implantação".',
-    f4_int_coerencia: 'Sim. Conquistar mais cooperativas no estado respeita o trade-off (sem venda avulsa ao pequeno produtor, só grãos) e não exige a operação em escala nacional que ainda não temos.',
-    f4_chk1: true, f4_chk2: true, f4_chk3: true, f4_chk4: true,
+    f4_int_coerencia: 'Sim. Conquistar mais cooperativas no estado respeita o trade-off (sem venda avulsa ao pequeno produtor, só grãos) e não exige a operação em escala nacional que ainda não temos.', f4_chk4: true,
 
     /* Folha 5A */
     f5a_o1_obj: 'Aumentar a participação da receita recorrente', f5a_o1_tipo: 'POS', f5a_o1_ind: '% da receita que é recorrente (acompanhada mês a mês pela receita recorrente mensal, MRR)', f5a_o1_base: '30%', f5a_o1_meta: '55%', f5a_o1_prazo: 'dez/2027',
@@ -124,8 +122,7 @@ window.WS_EXEMPLO = {
     f5b_rc1_data: '2027-04-05', f5b_rc1_ind: 'Receita recorrente mensal', f5b_rc1_cor: '🔴 Vermelho',
     f5b_rc1_causa: 'Equipe de campo alocada em vendas avulsas: as implantações das cooperativas atrasaram e a cobrança só começa com o sensor operando',
     f5b_rc1_acao: 'Mutirão de implantação em duas cooperativas em 15 dias + prioridade formal para contratos recorrentes',
-    f5b_rc1_resp: 'Sócio de operações', f5b_rc1_prazo: '15 dias', f5b_rc1_status: 'Em andamento',
-    f5_chk1: true, f5_chk2: true, f5_chk3: true, f5_chk4: true, f5_chk5: true, f5_chk6: true,
+    f5b_rc1_resp: 'Sócio de operações', f5b_rc1_prazo: '15 dias', f5b_rc1_status: 'Em andamento', f5_chk4: true, f5_chk6: true,
 
     /* Folha 6 */
     f6_a1_obj: '5', f6_a1_acao: 'Criar kit de instalação pré-configurado', f6_a1_ind: 'Dias entre contrato e sensor operando', f6_a1_alav: 'De 21 para 12 dias em 3 meses', f6_a1_imp: 'A', f6_a1_esf: 'B', f6_a1_resp: 'Coordenador de campo', f6_a1_prazo: 'mar/2027', f6_a1_custo: 'R$ 8 mil',
@@ -137,7 +134,7 @@ window.WS_EXEMPLO = {
     f6_a7_obj: '6', f6_a7_acao: 'Criar modelo padrão de relatório gerado pela plataforma', f6_a7_ind: '% de relatórios no prazo', f6_a7_alav: '100% no prazo a partir de abr/2027', f6_a7_imp: 'A', f6_a7_esf: 'A', f6_a7_resp: 'Líder de produto', f6_a7_prazo: 'abr/2027', f6_a7_custo: 'R$ 15 mil',
     f6_a8_obj: '4', f6_a8_acao: 'Reunião trimestral de resultados com cada cooperativa', f6_a8_ind: 'Taxa de renovação contratual', f6_a8_alav: 'Mantém a renovação acima de 90% nos próximos 12 meses', f6_a8_imp: 'A', f6_a8_esf: 'B', f6_a8_resp: 'Sócio comercial', f6_a8_prazo: 'mar/2027', f6_a8_custo: '—',
     f6_a9_obj: '7', f6_a9_acao: 'Plano de desenvolvimento com mentoria para os coordenadores de campo e comercial', f6_a9_ind: 'Nº de líderes com plano de desenvolvimento', f6_a9_alav: '2 líderes com plano até jun/2027', f6_a9_imp: 'A', f6_a9_esf: 'B', f6_a9_resp: 'Sócio de operações', f6_a9_prazo: 'mai/2027', f6_a9_custo: 'R$ 6 mil',
-    f6_chk1: true, f6_chk2: true, f6_chk3: true, f6_chk4: true,
+    f6_chk1: true,
 
     /* Fechamento */
     fc_obj: '5', fc_direcao: 'fO da TOWS (padronizar a implantação) + gargalo Operação (Folha 3A)',
@@ -155,7 +152,6 @@ window.WS_EXEMPLO = {
     f7_o5_persp: 'pro', f7_o5_leva: '3',
     f7_o6_persp: 'pro', f7_o6_leva: '4',
     f7_o7_persp: 'apr', f7_o7_leva: '5',
-    f7_ajustes: '"Implantar a gestão orçamentária" ficou sem seta: mantido como objetivo habilitador, com a justificativa registrada.',
-    f7_chk1: true, f7_chk2: true, f7_chk3: true, f7_chk4: true, f7_chk5: true, f7_chk6: true
+    f7_ajustes: '"Implantar a gestão orçamentária" ficou sem seta: mantido como objetivo habilitador, com a justificativa registrada.', f7_chk5: true,
   }
 };

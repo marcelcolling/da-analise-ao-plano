@@ -522,7 +522,7 @@
     }).join('') + '</div></div></nav>';
     h += '<main class="e-wrap e-main">';
     h += '<ol class="fluxo no-print" aria-label="Como trabalhar nesta etapa">' +
-      '<li><span class="fluxo-n">1</span><span><b>Entenda</b> com a exposição; o guia fica aberto para consulta.</span></li>' +
+      '<li><span class="fluxo-n">1</span><span><b>Entenda</b> com a exposição; o guia fica à mão para consulta.</span></li>' +
       '<li><span class="fluxo-n">2</span><span><b>Aplique</b> seção por seção na sua empresa, vendo antes como a AgroSense fez.</span></li>' +
       '<li><span class="fluxo-n">3</span><span><b>Confira</b> a lista final e salve o arquivo.</span></li></ol>';
     var total = esp.secoes.length;
@@ -562,7 +562,8 @@
     if (!linhas.length) return '';
     cols = cols.filter(function (x) { return linhas.some(function (l) { return !vazio(c[l.k[x.j]]); }); });
     var numerada = linhas.every(function (l) { return /^\d+$/.test(l.r) && !(l.rotuloDe && c[l.rotuloDe]); });
-    var h = (it.r ? '<h4 class="r-sub">' + esc(it.r) + '</h4>' : '') + '<table class="r-tab' + (cols.length > 5 ? ' r-tab-larga' : '') + (numerada ? ' r-tab-num' : '') + '"><thead><tr><th></th>';
+    // a moldura deixa a tabela rolar para o lado no celular (na impressão não muda nada)
+    var h = (it.r ? '<h4 class="r-sub">' + esc(it.r) + '</h4>' : '') + '<div class="r-tab-wrap"><table class="r-tab' + (cols.length > 5 ? ' r-tab-larga' : '') + (numerada ? ' r-tab-num' : '') + '"><thead><tr><th></th>';
     cols.forEach(function (x) { h += '<th>' + esc(x.c.r) + '</th>'; });
     h += '</tr></thead><tbody>';
     linhas.forEach(function (l) {
@@ -570,7 +571,7 @@
       cols.forEach(function (x) { h += '<td>' + br(valorLegivel(x.c, c[l.k[x.j]], c)) + '</td>'; });
       h += '</tr>';
     });
-    return h + '</tbody></table>';
+    return h + '</tbody></table></div>';
   }
   function relatorioItens(itens, c) {
     var h = '';
@@ -606,11 +607,12 @@
     });
     return h;
   }
-  function capa(titulo, sub, c) {
-    var hoje = new Date(), cfg = window.WS_CONFIG || {};
+  // nivel: 'h1' no PDF de uma folha; 'h2' no caderno completo, cuja página já tem o próprio h1
+  function capa(titulo, sub, c, nivel) {
+    var hoje = new Date(), cfg = window.WS_CONFIG || {}, hn = nivel || 'h1';
     return '<header class="r-capa">' +
       '<div class="r-capa-topo">Caderno de Estratégia' + (c.f0_empresa ? ' · ' + esc(c.f0_empresa) : '') + '</div>' +
-      '<h1>' + esc(titulo) + '</h1>' + (sub ? '<p class="r-capa-sub">' + esc(sub) + '</p>' : '') +
+      '<' + hn + ' class="r-capa-tit">' + esc(titulo) + '</' + hn + '>' + (sub ? '<p class="r-capa-sub">' + esc(sub) + '</p>' : '') +
       '<dl class="r-capa-dados">' +
         (c.f0_empresa ? '<div><dt>Empresa</dt><dd>' + esc(c.f0_empresa) + (c.f0_perfil ? ' · ' + esc(c.f0_perfil) : '') + '</dd></div>' : '') +
         (c.f0_participantes ? '<div><dt>Preenchido por</dt><dd>' + esc(c.f0_participantes) + '</dd></div>' : '') +
@@ -880,7 +882,7 @@
       partes.push('<section class="r-entrega" id="p-' + id + '"><div class="r-entrega-cab"><span>' + esc(esp.codigo) + '</span><div><h2>' + esc(esp.titulo) + '</h2><p>' + esc(esp.aula + ' · ' + esp.etapa) + '</p></div></div>' +
         (corpo || '<p class="r-vazio">Esta parte ainda não tem respostas.</p>') + '</section>');
     });
-    alvo.innerHTML = capa('Caderno de Estratégia', 'Da análise ao plano: diagnóstico, escolhas, objetivos, indicadores, faróis, ações e mapa estratégico', c) +
+    alvo.innerHTML = capa('Caderno de Estratégia', 'Da análise ao plano: diagnóstico, escolhas, objetivos, indicadores, faróis, ações e mapa estratégico', c, 'h2') +
       '<nav class="r-indice"><h2>Conteúdo</h2><ol>' + indice.join('') + '</ol></nav>' + partes.join('');
   }
 
