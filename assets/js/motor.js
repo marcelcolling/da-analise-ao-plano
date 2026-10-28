@@ -14,7 +14,7 @@
   var EX = (window.WS_EXEMPLO && window.WS_EXEMPLO.campos) || null;
 
   /* ================= utilidades sobre a especificação ================= */
-  function filhos(it) { return it.t === 'grupo' || it.t === 'caixa' || it.t === 'mais' ? it.itens : null; }
+  function filhos(it) { return /^(grupo|caixa|mais|progressivo|porObjetivo|objetivo)$/.test(it.t) ? it.itens : null; }
   function cadaItem(itens, f) {
     (itens || []).forEach(function (it) { f(it); var fs = filhos(it); if (fs) cadaItem(fs, f); });
   }
@@ -52,8 +52,12 @@
     if (tipo === 'opcoes') return rotuloOpcao(def.op, v);
     if (tipo === 'data') return dataBR(v);
     if (tipo === 'objetivo') return textoObjetivo(c, Number(v));
+    if (tipo === 'indicador') return F.nomeIndicador(c, v);
     return String(v);
   }
+  function codigoCurto(e) { return e.codigo.replace(/^Folhas? /, 'F').replace(' e ', '–').replace('Fechamento', 'Fech.'); }
+  function curto(t, n) { t = String(t || ''); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
+  function listaRefs(xs) { return xs.map(function (x) { return x.ref; }).join(', '); }
   function br(v) { return esc(v).replace(/\n/g, '<br>'); }
   function urlGuia(ref) { var g = F.GUIAS[ref[0]]; return g ? WS.raiz + g.url + (ref[1] ? '#' + ref[1] : '') : ''; }
   function completar(c) {
@@ -183,13 +187,11 @@
     return F.MATRIZ.slice(0, 5).filter(function (d) { return c['f3a_' + d.id + '_garg']; }).map(function (d) { return d.nome; });
   }
   function criteriosProntidao(c) {
-    var objs = F.objetivos(c), fs = F.fichas(c), as = F.acoes(c), am = analiseMapa(c);
+    var objs = F.objetivos(c), inds = F.indicadores(c), as = F.acoes(c), am = analiseMapa(c);
     var pos = objs.filter(function (o) { return o.tipo === 'POS'; }).length;
     var eoGarg = objs.filter(function (o) { return o.tipo === 'EO' && o.garg; }).length;
-    var semIndMeta = objs.filter(function (o) { return !o.ind || !o.meta; });
-    var semFarol = objs.filter(function (o) {
-      return !fs.some(function (f) { return f.obj === o.n && f.faixas && f.gatAm && f.gatVerm; });
-    });
+    var semIndMeta = objs.filter(function (o) { return !o.inds.length || o.inds.some(function (x) { return !x.nome || !x.meta; }); });
+    var incompletos = inds.filter(function (x) { return !x.ok; });
     var semAcao = objs.filter(function (o) { return !as.some(function (a) { return a.obj === o.n; }); });
     var lista = function (os) { return os.map(function (o) { return o.n; }).join(', '); };
     return [
@@ -200,20 +202,37 @@
         (am.semPersp.length ? ' <small>(sem perspectiva: ' + lista(am.semPersp) + ')</small>' : '')],
       [eoGarg >= 1, 'Pelo menos um objetivo de EO ligado à dimensão gargalo'],
       [objs.length > 0 && !semIndMeta.length, 'Cada objetivo com indicador e meta' + (semIndMeta.length && objs.length ? ' <small>(falta em: ' + lista(semIndMeta) + ')</small>' : '')],
-      [objs.length > 0 && !semFarol.length, 'Cada indicador com ficha, faixas de farol e gatilhos' + (semFarol.length && objs.length ? ' <small>(falta para os objetivos: ' + lista(semFarol) + ')</small>' : '')],
-      [objs.length > 0 && !semAcao.length, 'Cada indicador com pelo menos uma ação' + (semAcao.length && objs.length ? ' <small>(sem ação: ' + lista(semAcao) + ')</small>' : '')]
+      [inds.length > 0 && !incompletos.length, 'Cada indicador com ficha completa, faixas de farol e gatilhos' + (incompletos.length ? ' <small>(falta em: ' + listaRefs(incompletos) + ')</small>' : '')],
+      [objs.length > 0 && !semAcao.length, 'Cada indicador com pelo menos uma ação' + (semAcao.length && objs.length ? ' <small>(objetivos sem ação: ' + lista(semAcao) + ')</small>' : '')]
     ];
   }
 
-  var PROTOCOLO = {
-    verde: ['🟢 Verde · no rumo', 'Manter as ações; só registrar. Responsável do indicador.'],
-    amarelo: ['🟡 Amarelo · desvio tolerável', 'Investigar a causa e ajustar dentro do plano atual. Responsável do indicador apresenta causa e ajuste na próxima reunião mensal.'],
-    vermelho: ['🔴 Vermelho · rota comprometida', '5 porquês + plano de ação corretivo (o quê, quem, até quando) + comunicar os sócios. Plano corretivo em até 7 dias.']
-  };
   function chipsFarol(f) {
-    if (!f) return '<p class="vazio">Defina a meta do próximo período para ver as faixas.</p>';
     return '<div class="farol-faixas"><span class="fx fx-verde"><b>🟢 Verde</b>' + esc(f.verde) + '</span><span class="fx fx-amarelo"><b>🟡 Amarelo</b>' + esc(f.amarelo) + '</span><span class="fx fx-vermelho"><b>🔴 Vermelho</b>' + esc(f.vermelho) + '</span></div>';
   }
+  function faixasTexto(f) { return '🟢 ' + f.verde + ' · 🟡 ' + f.amarelo + ' · 🔴 ' + f.vermelho; }
+  /* um indicador no PDF, no exemplo e no resumo para o sistema: uma linha de tabela */
+  function linhaIndicador(x) {
+    var ficha = [x.formula && 'Fórmula: ' + esc(x.formula), x.unidade && 'Unidade: ' + esc(x.unidade), x.fonte && 'Fonte: ' + esc(x.fonte),
+      x.freq && 'Frequência: ' + esc(x.freq), x.pol && esc(x.pol), x.resp && 'Responsável: ' + esc(x.resp)].filter(Boolean).join(' · ');
+    var meta = x.meta || x.base ? esc((x.base || '—') + ' → ' + (x.meta || '—') + (x.prazo ? ' (' + x.prazo + ')' : '')) : '';
+    var f = x.faixas && !x.faixas.erro ? x.faixas : null;
+    return '<tr><th>' + esc(x.ref + ' · ' + (x.nome || 'indicador sem nome')) +
+      (x.tipo || x.vaid ? '<small>' + esc([x.tipo, x.vaid ? 'passa no teste da vaidade' : ''].filter(Boolean).join(' · ')) + '</small>' : '') + '</th><td>' +
+      [ficha, meta && 'Linha de base → meta: ' + meta,
+        f ? 'Meta do período: ' + esc(F.fmtNum(f.meta, x.unidade)) + ' · ' + esc(faixasTexto(f)) : '',
+        x.gatAm && '🟡 Gatilho: ' + br(x.gatAm), x.gatVerm && '🔴 Gatilho: ' + br(x.gatVerm)].filter(Boolean).join('<br>') + '</td></tr>';
+  }
+  function cabObjetivo(o) {
+    return '<div class="r-obj-cab"><span class="r-obj-n">' + o.n + '</span><strong>' + esc(o.texto) + '</strong><span class="r-obj-tipo ' + (o.tipo === 'POS' ? 'pos' : 'eo') + '">' + esc(o.tipo || '—') + (o.garg ? ' · gargalo' : '') + '</span></div>';
+  }
+  function relIndicadores(c) {
+    return F.objetivos(c).filter(function (o) { return o.inds.length; }).map(function (o) {
+      return '<div class="r-obj">' + cabObjetivo(o) + '<table class="r-tab"><tbody>' + o.inds.map(linhaIndicador).join('') + '</tbody></table></div>';
+    }).join('');
+  }
+  /* estado de um objetivo no passo 2: sem indicador, falta algo, completo */
+  function estadoObjetivo(o) { return !o.inds.length ? 'vazio' : o.inds.every(function (x) { return x.ok; }) ? 'ok' : 'andamento'; }
 
   var ESPECIAIS = {
     radar: {
@@ -280,13 +299,19 @@
     },
     direcoes: {
       atualizar: function (el, c) {
-        var item = function (cod, k) { return c[k] ? '<li><b>' + cod + '</b> ' + esc(c[k]) + '</li>' : ''; };
-        var tows = item('FO', 'f2_fo1') + item('FO', 'f2_fo2') + item('FA', 'f2_fa1') + item('FA', 'f2_fa2') + item('fO', 'f2_wo1') + item('fO', 'f2_wo2') + item('fA', 'f2_wa1') + item('fA', 'f2_wa2');
-        var eo = seq(3).map(function (i) { return c['f3a_eo' + i] ? '<li><b>EO</b> ' + esc(c['f3a_eo' + i]) + (c['f3a_eo' + i + '_dim'] ? ' <em>(' + esc(c['f3a_eo' + i + '_dim']) + ')</em>' : '') + '</li>' : ''; }).join('');
-        var pos = item('POS', 'f3b_pos') + item('Ansoff', 'f4_ans_vetor') + item('Folha 4', 'f4_int_direcao');
-        var g = dimsGargalo(c);
+        var objs = F.objetivos(c), g = dimsGargalo(c), livre = seq(F.N_OBJ).some(function (i) { return !c['f5a_o' + i + '_obj']; });
+        // cada direção pode ir, com um clique, para a próxima linha livre da tabela de objetivos
+        var item = function (cod, texto, tipo, garg) {
+          if (!texto) return '';
+          var ja = objs.filter(function (o) { return o.texto.trim().toLowerCase() === String(texto).trim().toLowerCase(); })[0];
+          return '<li><b>' + cod + '</b> ' + esc(texto) + (ja ? ' <span class="dir-usada">✓ objetivo ' + ja.n + '</span>'
+            : livre ? ' <button type="button" class="dir-usar" data-usar="' + esc(texto) + '" data-tipo="' + (tipo || '') + '"' + (garg ? ' data-garg="1"' : '') + ' title="Levar para a próxima linha livre dos objetivos" aria-label="Levar para os objetivos: ' + esc(texto) + '">＋</button>' : '') + '</li>';
+        };
+        var tows = [['FO', 'f2_fo1'], ['FO', 'f2_fo2'], ['FA', 'f2_fa1'], ['FA', 'f2_fa2'], ['fO', 'f2_wo1'], ['fO', 'f2_wo2'], ['fA', 'f2_wa1'], ['fA', 'f2_wa2']].map(function (x) { return item(x[0], c[x[1]]); }).join('');
+        var eo = seq(3).map(function (i) { var d = c['f3a_eo' + i + '_dim']; return item('EO' + (d ? ' · ' + esc(d) : ''), c['f3a_eo' + i], 'EO', d && g.indexOf(d) >= 0); }).join('');
+        var pos = item('POS', c.f3b_pos, 'POS') + item('Ansoff', c.f4_ans_vetor) + item('Folha 4', c.f4_int_direcao);
         var col = function (t, l, f) { return '<div class="radar-col"><span class="radar-tit">' + t + '</span>' + (l ? '<ul>' + l + '</ul>' : '<p class="vazio">Ainda vazio na ' + f + '.</p>') + '</div>'; };
-        el.innerHTML = '<span class="esp-rot">As direções que você já tem · matéria-prima dos objetivos</span><div class="radar radar-3">' +
+        el.innerHTML = '<span class="esp-rot">As direções que você já tem · ＋ leva a direção para a tabela de objetivos</span><div class="radar radar-3">' +
           col('TOWS (Folha 2)', tows, 'Folha 2') + col('Eficácia operacional (Folha 3A)', eo + (g.length ? '<li class="garg">★ Gargalo: ' + esc(g.join(', ')) + '</li>' : ''), 'Folha 3A') +
           col('Posicionamento e crescimento (3B e 4)', pos, 'Folha 3B') + '</div>';
       }
@@ -297,39 +322,50 @@
         var pos = objs.filter(function (o) { return o.tipo === 'POS'; }).length;
         var eoG = objs.filter(function (o) { return o.tipo === 'EO' && o.garg; }).length;
         var semTipo = objs.filter(function (o) { return !o.tipo; }).map(function (o) { return o.n; });
-        var incompletos = objs.filter(function (o) { return !o.ind || !o.base || !o.meta || !o.prazo; }).map(function (o) { return o.n; });
         var g = dimsGargalo(c);
         el.innerHTML = '<span class="esp-rot">Conferência automática</span><ul class="chk-auto-lista">' +
           aviso(objs.length >= 6 && objs.length <= 10, 'De 6 a 10 objetivos <small>(hoje: ' + objs.length + ')</small>') +
           aviso(pos >= 2, 'Pelo menos 2 de posicionamento (POS) <small>(hoje: ' + pos + ')</small>') +
-          aviso(eoG >= 1, 'Pelo menos 1 de EO ligado ao gargalo' + (g.length ? ' <small>(gargalo na Folha 3A: ' + esc(g.join(', ')) + ')</small>' : ' <small>(marque o gargalo na Folha 3A)</small>')) +
+          aviso(eoG >= 1, 'Pelo menos 1 de EO que ataca o gargalo' + (g.length ? ' <small>(gargalo na Folha 3A: ' + esc(g.join(', ')) + ')</small>' : ' <small>(marque o gargalo na Folha 3A)</small>')) +
           (semTipo.length ? aviso(false, 'Marque EO ou POS nos objetivos ' + semTipo.join(', ')) : '') +
-          aviso(objs.length > 0 && !incompletos.length, 'Cada objetivo com indicador, linha de base, meta e prazo' + (incompletos.length ? ' <small>(falta em: ' + incompletos.join(', ') + ')</small>' : '')) +
-          '</ul>';
+          '</ul>' + (objs.length ? '<a class="seguir-dentro" href="#s-indicadores">Objetivos escritos? Siga para os indicadores de cada um ↓</a>' : '');
       }
     },
-    farol: {
+    /* o que ainda falta num indicador (no topo de cada um, no passo 2) */
+    indEstado: {
       atualizar: function (el, c, it) {
-        var n = it.n, f = F.faixas(c, n), p = 'f5a_fc' + n + '_';
-        var info = c[p + 'nome'] ? '<p class="farol-info"><b>' + esc(c[p + 'nome']) + '</b>' + (c[p + 'pol'] ? ' · ' + esc(c[p + 'pol']) : ' · <span class="falta">defina a polaridade na ficha ' + n + '</span>') + (c[p + 'unidade'] ? ' · ' + esc(c[p + 'unidade']) : '') + '</p>'
-          : '<p class="farol-info falta">Preencha a ficha ' + n + ' (Folha 5A) para este painel.</p>';
-        var sim = F.numBR(c['f5b_p' + n + '_sim']), cr = F.cor(f, sim), simH = '';
-        if (cr) simH = '<div class="farol-sim fx-' + cr + '"><b>Simulação: ' + esc(F.fmtNum(sim, c[p + 'unidade'])) + ' → ' + PROTOCOLO[cr][0] + '</b><span>' + PROTOCOLO[cr][1] + '</span>' +
-          (cr === 'amarelo' && c['f5b_p' + n + '_gat_am'] ? '<span>Seu gatilho: ' + esc(c['f5b_p' + n + '_gat_am']) + '</span>' : '') +
-          (cr === 'vermelho' && c['f5b_p' + n + '_gat_verm'] ? '<span>Seu gatilho: ' + esc(c['f5b_p' + n + '_gat_verm']) + '</span>' : '') + '</div>';
-        el.innerHTML = info + chipsFarol(f) + simH;
-      },
-      relatorio: function (c, it) { var f = F.faixas(c, it.n); return f ? chipsFarol(f) : ''; }
+        var m = String(it.n).split('.'), i = Number(m[0]), j = Number(m[1]), x = F.indicadores(c, i).filter(function (y) { return y.j === j; })[0];
+        if (!x) { el.innerHTML = '<p class="ind-estado">Comece pelo nome do indicador.</p>'; return; }
+        el.innerHTML = x.ok ? '<p class="ind-estado ok">✔ Indicador completo: ficha, meta, farol e gatilhos.</p>'
+          : '<p class="ind-estado">Falta: ' + esc(x.falta.join(', ')) + (x.faixas && x.faixas.erro ? (x.falta.length ? '; ' : '') + 'ajustar os % do farol' : '') + '.</p>';
+      }
     },
-    simulacao: {
+    /* as faixas de um indicador, calculadas com os % que a empresa escolheu */
+    faixas: {
+      atualizar: function (el, c, it) {
+        var m = String(it.n).split('.'), i = m[0], j = m[1], f = F.faixas(c, i, j), p = 'f5a_o' + i + '_i' + j + '_';
+        if (!f) { el.innerHTML = '<p class="vazio">Escreva a meta do período e os % do amarelo e do vermelho: as faixas aparecem aqui.</p>'; return; }
+        if (f.erro) { el.innerHTML = '<ul class="chk-auto-lista">' + aviso(false, esc(f.erro)) + '</ul>'; return; }
+        el.innerHTML = chipsFarol(f) + (c[p + 'pol'] ? '' : '<p class="farol-info falta">Polaridade não escolhida: as faixas acima consideram "quanto maior, melhor".</p>');
+      }
+    },
+    /* painel de controle (Folha 5B): todos os indicadores numa tabela; cada linha abre a aba do objetivo */
+    painel: {
       atualizar: function (el, c) {
-        var linhas = seq(F.N_FICHAS).map(function (n) {
-          var f = F.faixas(c, n); if (!f) return '';
-          var v = f.maior ? f.meta * 0.8 : f.meta * 1.2, cr = F.cor(f, v), u = c['f5a_fc' + n + '_unidade'];
-          return '<li class="fx-' + cr + '"><b>' + esc(c['f5a_fc' + n + '_nome'] || 'Indicador ' + n) + '</b>: ' + (f.maior ? '20% abaixo' : '20% acima') + ' da meta = ' + esc(F.fmtNum(v, u)) + ' → ' + PROTOCOLO[cr][0] +
-            '<br><span>' + esc(cr === 'vermelho' ? (c['f5b_p' + n + '_gat_verm'] || 'Gatilho do vermelho ainda não escrito') : cr === 'amarelo' ? (c['f5b_p' + n + '_gat_am'] || 'Gatilho do amarelo ainda não escrito') : '') + '</span></li>';
+        var objs = F.objetivos(c), inds = F.indicadores(c);
+        if (!inds.length) { el.innerHTML = '<p class="vazio">O painel de controle (Folha 5B) se monta aqui, com os indicadores de todos os objetivos.</p>'; return; }
+        var ok = inds.filter(function (x) { return x.ok; }).length;
+        var linhas = objs.map(function (o) {
+          if (!o.inds.length) return '<tr class="painel-falta"><td><button type="button" class="painel-ir" data-obj-sel="' + o.n + '">' + o.n + '</button></td><td colspan="5">' + esc(curto(o.texto, 70)) + ' <b>· sem indicador</b></td></tr>';
+          return o.inds.map(function (x) {
+            var f = x.faixas && !x.faixas.erro ? x.faixas : null;
+            return '<tr><td><button type="button" class="painel-ir" data-obj-sel="' + o.n + '" title="Abrir o objetivo ' + o.n + '">' + x.ref + '</button></td><td>' + esc(x.nome || 'sem nome') + (x.tipo ? ' <small>' + esc(x.tipo.toLowerCase()) + '</small>' : '') + '</td>' +
+              (f ? '<td class="fx-verde">' + esc(f.verde) + '</td><td class="fx-amarelo">' + esc(f.amarelo) + '</td><td class="fx-vermelho">' + esc(f.vermelho) + '</td>' : '<td colspan="3" class="painel-sem">faixas ainda não definidas</td>') +
+              '<td>' + (x.ok ? '<span class="painel-ok">✔ completo</span>' : '<span class="painel-pend">falta ' + x.falta.length + (x.falta.length === 1 ? ' item' : ' itens') + '</span>') + '</td></tr>';
+          }).join('');
         }).join('');
-        el.innerHTML = linhas ? '<span class="esp-rot">O cenário aplicado ao seu painel</span><ul class="sim-lista">' + linhas + '</ul>' : '<p class="vazio">Defina as metas do painel para ver a simulação.</p>';
+        el.innerHTML = '<span class="esp-rot">Seu painel de controle (Folha 5B) · ' + ok + ' de ' + inds.length + ' indicadores completos · clique no número para abrir o objetivo</span>' +
+          '<div class="r-tab-wrap"><table class="painel-tab"><thead><tr><th>Nº</th><th>Indicador</th><th>🟢 Verde</th><th>🟡 Amarelo</th><th>🔴 Vermelho</th><th>Situação</th></tr></thead><tbody>' + linhas + '</tbody></table></div>';
       }
     },
     priorizacao: {
@@ -343,7 +379,8 @@
         var demais = objs.filter(function (o) { return as.filter(function (a) { return a.obj === o.n; }).length > 3; }).map(function (o) { return o.n; });
         var semObj = as.filter(function (a) { return !a.obj; }).map(function (a) { return a.n; });
         var semAlav = as.filter(function (a) { return !a.alav || !a.ind; }).map(function (a) { return a.n; });
-        var painel = F.fichas(c).filter(function (f) { return f.obj && !as.some(function (a) { return a.obj === f.obj; }); }).map(function (f) { return f.nome || 'ficha ' + f.n; });
+        var painel = F.indicadores(c).filter(function (x) { return !as.some(function (a) { return a.obj === x.obj; }); }).map(function (x) { return x.nome || 'indicador ' + x.ref; });
+        var naoMovidos = F.indicadores(c).filter(function (x) { return as.some(function (a) { return a.obj === x.obj; }) && !as.some(function (a) { return a.ind === x.ref; }); }).map(function (x) { return x.nome || x.ref; });
         el.innerHTML = '<span class="esp-rot">Impacto × esforço</span><div class="q2 q2-prio"><span class="q2-eixo q2-x">Esforço baixo · alto →</span><span class="q2-eixo q2-y">Impacto alto · baixo ↓</span>' +
           cel('Fazer já', 'impacto alto, esforço baixo', 'q-a') + cel('Planejar', 'dividir em etapas, garantir recursos', 'q-b') + cel('Encaixar', 'se sobrar tempo', 'q-c') + cel('Descartar', 'lista de espera', 'q-d') + '</div>' +
           '<ul class="chk-auto-lista">' +
@@ -353,6 +390,7 @@
           (semObj.length ? aviso(false, 'Escolha o objetivo das ações ' + semObj.join(', ')) : '') +
           (semAlav.length ? aviso(false, 'Teste da alavanca incompleto nas ações ' + semAlav.join(', ') + ' (indicador e "em quanto e em quanto tempo")') : '') +
           (painel.length ? aviso(false, 'Indicadores do painel sem ação: ' + esc(painel.join(', ')) + '. Indicador sem ação não tem como sair do vermelho.') : '') +
+          (naoMovidos.length ? aviso(false, 'Nenhuma ação aponta diretamente para: ' + esc(naoMovidos.join(', ')) + '. Tudo bem se as ações do mesmo objetivo também o movem.', 'info') : '') +
           '</ul>';
       },
       relatorio: function (c) { return F.acoes(c).length ? '<div class="r-prio">' + ESPECIAIS.priorizacao.htmlRel(c) + '</div>' : ''; },
@@ -373,16 +411,20 @@
       html: function (c, n) {
         var o = F.objetivos(c).filter(function (x) { return x.n === n; })[0];
         if (!o) return '<p class="vazio">Este objetivo não existe mais na Folha 5A.</p>';
-        var fs = F.fichas(c).filter(function (f) { return f.obj === n; }), as = F.acoes(c).filter(function (a) { return a.obj === n; });
+        var is = o.inds, as = F.acoes(c).filter(function (a) { return a.obj === n; });
         var elo = function (rot, val, falta) { return '<li class="elo' + (val ? '' : ' quebra') + '"><span class="elo-rot">' + rot + '</span><span class="elo-val">' + (val || '<b>falta</b> · ' + falta) + '</span></li>'; };
-        var farol = fs.length ? fs.map(function (f) { return esc(f.nome || 'ficha ' + f.n) + (f.faixas ? ': 🟢 ' + esc(f.faixas.verde) + ' · 🟡 ' + esc(f.faixas.amarelo) + ' · 🔴 ' + esc(f.faixas.vermelho) : ' (sem faixas: falta a meta do período na Folha 5B)'); }).join('<br>') : '';
+        var nome = function (x) { return esc(x.nome || 'indicador ' + x.ref); };
+        var metas = is.filter(function (x) { return x.meta; }).map(function (x) { return nome(x) + ': ' + esc((x.base ? x.base + ' → ' : '') + x.meta + (x.prazo ? ' (' + x.prazo + ')' : '')); }).join('<br>');
+        var farol = is.some(function (x) { return x.faixas && !x.faixas.erro; }) ? is.map(function (x) {
+          return nome(x) + (x.faixas && !x.faixas.erro ? ': ' + esc(faixasTexto(x.faixas)) : ' (sem faixas: falta definir o farol na Folha 5B)');
+        }).join('<br>') : '';
         return '<ol class="cadeia">' +
           elo('Direção', esc(c.fc_direcao || ''), 'escreva acima de onde ele veio') +
           elo('Tipo', o.tipo ? esc(o.tipo) + (o.garg ? ' · ★ gargalo' : '') : '', 'marque EO ou POS na Folha 5A') +
           elo('Objetivo', esc(o.texto), '') +
-          elo('Indicador', o.ind ? esc(o.ind) + (o.ind2 ? '<br><small>tendência: ' + esc(o.ind2) + '</small>' : '') : '', 'defina o indicador na Folha 5A') +
-          elo('Meta', o.meta ? esc((o.base ? o.base + ' → ' : '') + o.meta + (o.prazo ? ' (' + o.prazo + ')' : '')) : '', 'defina a meta na Folha 5A') +
-          elo('Farol', farol, 'faça a ficha e o painel deste indicador (Folhas 5A e 5B)') +
+          elo('Indicador', is.length ? is.map(function (x) { return nome(x) + (x.tipo ? ' <small>(' + esc(x.tipo.toLowerCase()) + ')</small>' : ''); }).join('<br>') : '', 'defina o indicador na Folha 5A') +
+          elo('Meta', metas, 'defina a meta do indicador na Folha 5A') +
+          elo('Farol', farol, 'defina o farol do indicador (Folha 5B)') +
           elo('Ação', as.length ? as.map(function (a) { return esc(a.acao) + (a.prio ? ' <small>(' + esc(a.prio) + ')</small>' : ''); }).join('<br>') : '', 'nenhuma ação na Folha 6 para este objetivo') +
           '</ol>';
       },
@@ -390,15 +432,15 @@
     },
     pendencias: {
       atualizar: function (el, c) {
-        var objs = F.objetivos(c), fs = F.fichas(c), as = F.acoes(c);
-        var aLevantar = objs.filter(function (o) { return !o.base || /levantar/i.test(o.base); }).map(function (o) { return o.n; });
-        var semFicha = objs.filter(function (o) { return !fs.some(function (f) { return f.obj === o.n; }); }).map(function (o) { return o.n; });
-        var semFarol = fs.filter(function (f) { return !f.faixas || !f.gatAm || !f.gatVerm; }).map(function (f) { return f.nome || 'ficha ' + f.n; });
+        var objs = F.objetivos(c), inds = F.indicadores(c), as = F.acoes(c);
+        var aLevantar = inds.filter(function (x) { return !x.base || /levantar/i.test(x.base); });
+        var semInd = objs.filter(function (o) { return !o.inds.length; }).map(function (o) { return o.n; });
+        var incompletos = inds.filter(function (x) { return !x.ok; });
         var semAcao = objs.filter(function (o) { return !as.some(function (a) { return a.obj === o.n; }); }).map(function (o) { return o.n; });
         el.innerHTML = '<span class="esp-rot">O que ainda falta no caderno</span><ul class="chk-auto-lista">' +
-          aviso(objs.length > 0 && !aLevantar.length, 'Linhas de base' + (aLevantar.length ? ' a levantar nos objetivos ' + aLevantar.join(', ') : ' levantadas')) +
-          aviso(objs.length > 0 && !semFicha.length, 'Fichas de indicador' + (semFicha.length ? ' faltando para os objetivos ' + semFicha.join(', ') : ' completas')) +
-          aviso(fs.length > 0 && !semFarol.length, 'Faixas e gatilhos' + (semFarol.length ? ' faltando em: ' + esc(semFarol.join(', ')) : fs.length ? ' em todos os painéis' : ': nenhuma ficha ainda')) +
+          aviso(objs.length > 0 && !semInd.length, 'Indicadores' + (semInd.length ? ' faltando para os objetivos ' + semInd.join(', ') : objs.length ? ' para todos os objetivos' : ': nenhum objetivo ainda')) +
+          aviso(inds.length > 0 && !aLevantar.length, 'Linhas de base' + (aLevantar.length ? ' a levantar nos indicadores ' + listaRefs(aLevantar) : inds.length ? ' levantadas' : ': nenhum indicador ainda')) +
+          aviso(inds.length > 0 && !incompletos.length, 'Indicadores completos (ficha, farol e gatilhos)' + (incompletos.length ? ': falta completar ' + listaRefs(incompletos) + ' <a href="' + WS.raiz + 'folhas/bloco4.html' + (WS.exemplo ? '?exemplo' : '') + '#s-indicadores">abrir a Folha 5</a>' : '')) +
           aviso(objs.length > 0 && !semAcao.length, 'Ações' + (semAcao.length ? ' faltando para os objetivos ' + semAcao.join(', ') : ' para todos os objetivos')) +
           '</ul>';
       }
@@ -451,6 +493,7 @@
     if (tipo === 'check') return '<label class="chk-cel"><input type="checkbox"' + attrs(base) + '><span aria-hidden="true"></span></label>';
     if (tipo === 'opcoes') return '<select' + attrs(base) + '><option value="">—</option>' + opcoes(def.op).map(function (o) { return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('') + '</select>';
     if (tipo === 'objetivo') return '<select data-objetivo' + attrs(base) + '><option value="">—</option></select>';
+    if (tipo === 'indicador') return '<select data-indicador' + attrs(base) + '><option value="">—</option></select>';
     return '<textarea rows="2"' + attrs(Object.assign(base, { placeholder: ph || null })) + '></textarea>';
   }
   function htmlCampo(it) {
@@ -483,8 +526,17 @@
     return (itens || []).map(function (it) {
       if (!it.t) return htmlCampo(it);
       if (it.t === 'grupo') return '<div class="grade grade-' + (it.cols || 2) + '">' + htmlItens(it.itens) + '</div>';
-      if (it.t === 'caixa') return '<div class="caixa ' + esc(it.cls || '') + '"><h4 class="caixa-tit">' + esc(it.r) + (it.rotuloDe ? '<span data-rotulo-de="' + esc(it.rotuloDe) + '" data-prefixo=" · "></span>' : '') + '</h4>' +
+      if (it.t === 'caixa') return '<div class="caixa ' + esc(it.cls || '') + '"><div class="caixa-cab"><h4 class="caixa-tit">' + esc(it.r) + (it.rotuloDe ? '<span data-rotulo-de="' + esc(it.rotuloDe) + '" data-prefixo=" · "></span>' : '') + '</h4>' +
+        (it.limpar ? '<button type="button" class="btn-limpar" data-limpar>Limpar ' + esc(it.r.toLowerCase()) + '</button>' : '') + '</div>' +
         (it.d ? '<p class="caixa-dica">' + esc(it.d) + '</p>' : '') + htmlItens(it.itens) + '</div>';
+      if (it.t === 'progressivo') return '<div class="prog" data-minimo="' + (it.minimo || 1) + '">' + it.itens.map(function (x) { return '<div class="prog-item">' + htmlItens([x]) + '</div>'; }).join('') +
+        '<button type="button" class="btn-linha btn-prog" data-mais-item>' + esc(it.botao) + '</button></div>';
+      // uma aba por objetivo da Folha 5A (as abas e os cartões visíveis são ajustados em atualizarVisual)
+      if (it.t === 'porObjetivo') return '<div class="objs" data-objs><div class="objs-nav" role="group" aria-label="Escolha o objetivo"></div>' +
+        '<p class="vazio objs-vazio">Escreva os objetivos no passo 1: cada um ganha aqui uma aba para os seus indicadores.</p>' + htmlItens(it.itens) + '</div>';
+      if (it.t === 'objetivo') return '<div class="obj-card" data-obj="' + it.n + '" hidden><div class="obj-cab"><span class="obj-n">' + it.n + '</span><div class="obj-cab-txt"><span class="obj-rot">Objetivo ' + it.n + '</span>' +
+        '<strong data-rotulo-de="f5a_o' + it.n + '_obj"></strong></div><span class="obj-tags" data-obj-tags></span></div>' + htmlItens(it.itens) +
+        '<div class="obj-pe"><button type="button" class="vd-btn vd-btn-ghost" data-obj-ir="-1">← Objetivo anterior</button><button type="button" class="vd-btn vd-btn-roxo" data-obj-ir="1">Próximo objetivo →</button></div></div>';
       if (it.t === 'mais') return '<details class="mais"><summary>' + esc(it.r) + '</summary><div class="mais-corpo">' + htmlItens(it.itens) + '</div></details>';
       if (it.t === 'sub') return '<h3 class="sub">' + esc(it.r) + '</h3>';
       if (it.t === 'nota') return '<div class="nota">' + it.html + '</div>';
@@ -493,7 +545,7 @@
       if (it.t === 'trazer') return '<div class="trazer"><button type="button" class="btn-trazer" data-trazer="' + esc(JSON.stringify(it.mapa)) + '">' + esc(it.r) + '</button></div>';
       if (it.t === 'checklist') return '<ul class="chk-lista">' + it.itens.map(function (c) {
         if (!Array.isArray(c)) return '<li class="chk-conferido" data-auto="' + (AUTO.push(c.auto) - 1) + '"><span class="chk-caixa" aria-hidden="true"></span><span>' + esc(c.r) +
-          '</span><em class="chk-tag">conferido pelo caderno</em></li>';
+          (c.ir ? ' <a class="chk-ir" href="#s-' + esc(c.ir) + '">resolver no passo ↑</a>' : '') + '</span><em class="chk-tag">conferido pelo caderno</em></li>';
         return '<li><label><input type="checkbox" data-k="' + esc(c[0]) + '"><span class="chk-caixa" aria-hidden="true"></span><span>' + esc(c[1]) + '</span><em class="chk-tag chk-tag-mao">marque você</em></label></li>';
       }).join('') + '</ul>';
       if (it.t === 'especial') return '<div class="especial esp-' + esc(it.nome) + '" data-esp="' + esc(it.nome) + '"' + (it.n ? ' data-n="' + it.n + '"' : '') + '></div>';
@@ -506,7 +558,11 @@
     var guia = F.GUIAS[esp.guia];
     var qs = WS.exemplo ? '?exemplo' : '';   // no modo exemplo, a navegação continua no exemplo
     var urlP = function (e) { return WS.raiz + 'folhas/' + e.id + '.html' + qs; };
-    var h = '<header class="e-hero"><div class="e-wrap">' +
+    // trilha das 8 etapas: onde estou, o que está pronto, e um clique para ir a qualquer folha
+    var trilha = '<nav class="e-trilha no-print" aria-label="Etapas do caderno"><span class="e-trilha-rot">Seu caderno</span>' + F.ORDEM.map(function (id) {
+      return '<a href="' + esc(urlP(P[id])) + '" data-trilha="' + id + '"' + (id === esp.id ? ' aria-current="page"' : '') + '>' + esc(codigoCurto(P[id])) + '</a>';
+    }).join('') + '</nav>';
+    var h = '<header class="e-hero"><div class="e-wrap">' + trilha +
       '<span class="e-tag"><i></i>' + esc(esp.aula + ' · ' + esp.etapa) + '</span>' +
       '<h1><span class="e-cod">' + esc(esp.codigo) + '</span>' + esc(esp.titulo) + '</h1>' +
       '<p class="e-perg">' + esc(esp.pergunta) + '</p>' +
@@ -525,10 +581,13 @@
       '<li><span class="fluxo-n">1</span><span><b>Entenda</b> com a exposição; o guia fica à mão para consulta.</span></li>' +
       '<li><span class="fluxo-n">2</span><span><b>Aplique</b> seção por seção na sua empresa, vendo antes como a AgroSense fez.</span></li>' +
       '<li><span class="fluxo-n">3</span><span><b>Confira</b> a lista final e salve o arquivo.</span></li></ol>';
-    var total = esp.secoes.length;
+    var finalSec = function (s) { return s.n === '✓' || s.n === '★'; };
+    var total = esp.secoes.filter(function (s) { return !finalSec(s); }).length;
     esp.secoes.forEach(function (s, i) {
       var temEx = EX && !WS.exemplo && s.exemplo !== false;
-      var final = s.n === '✓' || s.n === '★';
+      var final = finalSec(s), seg = esp.secoes[i + 1];
+      // fim de cada passo: botão para o seguinte (o último leva à lista final)
+      var seguir = seg ? '<a class="sec-seguir no-print" href="#s-' + esc(seg.id) + '">' + (finalSec(seg) ? 'Conferir a lista final' : 'Seguir para o passo ' + (i + 2) + ': ' + esc(seg.nav || seg.titulo)) + ' ↓</a>' : '';
       var apoio = (s.guia ? '<a class="link-leitura" href="' + esc(urlGuia(s.guia)) + '" target="_blank" rel="noopener">📖 No ' + esc(F.GUIAS[s.guia[0]].nome.replace(/ · .*/, '').replace('Guia de uso do caderno', 'guia de uso')) + ' ↗</a>' : '') +
         (temEx ? '<details class="ex" data-ex="' + esc(s.id) + '"><summary><span class="ex-ico" aria-hidden="true">◎</span>Ver como a AgroSense fez</summary><div class="ex-corpo"></div></details>' : '');
       h += '<section class="e-secao' + (final ? ' e-secao-chk' : '') + '" id="s-' + esc(s.id) + '" data-sec="' + esc(s.id) + '">' +
@@ -538,7 +597,7 @@
         (s.dica ? '<p class="e-dica">' + esc(s.dica) + '</p>' : '') +
         (apoio ? '<div class="sec-apoio no-print">' + apoio + '</div>' : '') +
         (s.passos ? '<div class="passos"><span class="passos-rot">✎ Mão na massa</span><ol>' + s.passos.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ol></div>' : '') +
-        '<div class="e-secao-corpo">' + htmlItens(s.itens) + '</div></div></section>';
+        '<div class="e-secao-corpo">' + htmlItens(s.itens) + '</div>' + seguir + '</div></section>';
     });
     h += '<aside class="proximo no-print"><div><span class="proximo-rot">Esta folha</span><p id="proximoStatus"></p></div><div class="proximo-acoes">' +
       (WS.exemplo ? '' : '<button type="button" class="vd-btn vd-btn-ghost" data-salvar-arquivo>⤓ Salvar arquivo</button>') +
@@ -587,6 +646,8 @@
         if (dc.replace(/<[^>]+>|\s/g, '')) h += '<div class="r-caixa"><h4 class="r-sub">' + esc(it.r) + (it.rotuloDe && c[it.rotuloDe] ? ' · ' + esc(c[it.rotuloDe]) : '') + '</h4>' + dc + '</div>';
       } else if (it.t === 'mais') {
         h += relatorioItens(it.itens, c);
+      } else if (it.t === 'porObjetivo') {
+        h += relIndicadores(c);
       } else if (it.t === 'tabela') {
         h += relatorioTabela(it, c);
       } else if (it.t === 'sub') {
@@ -644,8 +705,9 @@
     function escrever(el, v) {
       if (el.type === 'checkbox') el.checked = !!v;
       else {
-        if (el.hasAttribute('data-objetivo') && !vazio(v) && !el.querySelector('option[value="' + String(v).replace(/"/g, '') + '"]')) {
-          var o = document.createElement('option'); o.value = v; o.textContent = 'Objetivo ' + v; el.appendChild(o);
+        var lista = el.hasAttribute('data-objetivo') ? 'Objetivo ' : el.hasAttribute('data-indicador') ? 'Indicador ' : '';
+        if (lista && !vazio(v) && !Array.prototype.some.call(el.options, function (x) { return x.value === String(v); })) {
+          var o = document.createElement('option'); o.value = v; o.textContent = lista + v; el.appendChild(o);
         }
         el.value = vazio(v) ? '' : String(v);
       }
@@ -664,6 +726,67 @@
         if (v && !objs.some(function (o) { return String(o.n) === v; })) h += '<option value="' + esc(v) + '">' + esc(textoObjetivo(c, Number(v))) + '</option>';
         if (sel._ultimo !== h) { sel.innerHTML = h; sel._ultimo = h; sel.value = v; }
       });
+      // indicador que a ação move: os indicadores do objetivo escolhido na mesma linha (ou todos, sem objetivo)
+      var inds = F.indicadores(c);
+      app.querySelectorAll('select[data-indicador]').forEach(function (sel) {
+        var tr = sel.closest('tr'), os = tr && tr.querySelector('select[data-objetivo]'), on = os ? Number(os.value) || 0 : 0;
+        var lista = inds.filter(function (x) { return !on || x.obj === on; }), v = sel.value;
+        var h = '<option value="">—</option>' + lista.map(function (x) { return '<option value="' + x.ref + '">' + esc((on ? '' : x.obj + ' · ') + (x.nome || 'Indicador ' + x.ref)) + '</option>'; }).join('');
+        if (v && !lista.some(function (x) { return x.ref === v; })) h += '<option value="' + esc(v) + '">' + esc(F.nomeIndicador(c, v) + (/^\d+\.\d$/.test(v) ? ' (de outro objetivo ou apagado)' : '')) + '</option>';
+        if (on && !lista.length) h += '<option value="" disabled>Este objetivo ainda não tem indicador (Folha 5A)</option>';
+        if (sel._ultimo !== h) { sel.innerHTML = h; sel._ultimo = h; sel.value = v; }
+      });
+    }
+    function preenchido(el) { return !el.classList.contains('calc') && !vazio(el.type === 'checkbox' ? el.checked : el.value); }
+    function temValor(box) { return Array.prototype.some.call(box.querySelectorAll('[data-k]'), preenchido); }
+    /* passo 2 da Folha 5: abas dos objetivos, cartão visível, rótulos e botões anterior/próximo */
+    function abasObjetivos(c) {
+      app.querySelectorAll('[data-objs]').forEach(function (box) {
+        var objs = F.objetivos(c), ns = objs.map(function (o) { return o.n; });
+        if (ns.indexOf(box._sel) < 0) box._sel = ns[0] || 0;
+        var nav = box.querySelector('.objs-nav');
+        var h = objs.map(function (o) {
+          var st = estadoObjetivo(o), ativa = o.n === box._sel;
+          var txt = st === 'vazio' ? 'sem indicador' : o.inds.length + (o.inds.length === 1 ? ' indicador' : ' indicadores') + (st === 'ok' ? ' ✔' : ' · falta algo');
+          return '<button type="button" class="obj-aba ' + st + (ativa ? ' ativa' : '') + '" data-obj-sel="' + o.n + '" aria-pressed="' + ativa + '" title="' + esc(o.texto) + '">' +
+            '<b>' + o.n + '</b><span class="obj-aba-txt">' + esc(curto(o.texto, 40)) + '</span><small>' + txt + '</small></button>';
+        }).join('');
+        if (nav._h !== h) { nav.innerHTML = h; nav._h = h; }
+        nav.hidden = !objs.length;
+        box.querySelector('.objs-vazio').hidden = objs.length > 0;
+        var idx = ns.indexOf(box._sel);
+        box.querySelectorAll('.obj-card').forEach(function (card) {
+          var n = Number(card.dataset.obj), vis = n === box._sel;
+          card.hidden = !vis;
+          if (!vis) return;
+          var o = objs[idx];
+          card.querySelector('[data-obj-tags]').innerHTML = (o.tipo ? '<span class="obj-tag ' + (o.tipo === 'POS' ? 'pos' : 'eo') + '">' + esc(o.tipo) + '</span>' : '<span class="obj-tag sem">EO ou POS? (passo 1)</span>') +
+            (o.garg ? '<span class="obj-tag garg">★ gargalo</span>' : '');
+          card.querySelector('[data-obj-ir="-1"]').hidden = idx <= 0;
+          card.querySelector('[data-obj-ir="1"]').textContent = idx < ns.length - 1 ? 'Próximo: objetivo ' + ns[idx + 1] + ' →' : 'Terminei os objetivos: ver o painel ↓';
+        });
+      });
+    }
+    function escolherObjetivo(n, rolar) {
+      var box = app.querySelector('[data-objs]');
+      if (!box) return;
+      box._sel = n;
+      atualizarVisual();
+      WS.agendarAlturas();
+      if (rolar) box.scrollIntoView({ block: 'start' });
+    }
+    /* trilha das etapas (topo da folha): estado de cada uma com o que está no caderno agora */
+    var tTrilha = null;
+    function trilha(c) {
+      // adiado e agrupado (várias teclas seguidas = um cálculo); setTimeout porque o requestAnimationFrame pausa em abas ocultas
+      clearTimeout(tTrilha);
+      tTrilha = setTimeout(function () {
+        app.querySelectorAll('[data-trilha]').forEach(function (a) {
+          var s = status(a.dataset.trilha, c);
+          a.className = s.estado;
+          a.title = P[a.dataset.trilha].codigo + ' · ' + P[a.dataset.trilha].titulo + ': ' + s.texto;
+        });
+      }, 120);
     }
     function atualizarVisual() {
       var c = todos();
@@ -681,9 +804,7 @@
         var trs = Array.prototype.slice.call(w.querySelectorAll('tbody tr'));
         if (w.dataset.minimo) {
           var ultima = -1;
-          trs.forEach(function (tr, i) {
-            if (Array.prototype.some.call(tr.querySelectorAll('[data-k]'), function (el) { return !el.classList.contains('calc') && !vazio(el.type === 'checkbox' ? el.checked : el.value); })) ultima = i;
-          });
+          trs.forEach(function (tr, i) { if (temValor(tr)) ultima = i; });
           var n = Math.min(trs.length, Math.max(Number(w.dataset.minimo), ultima + 2, w._abertas || 0));
           trs.forEach(function (tr, i) { tr.hidden = i >= n; });
           var b = w.querySelector('[data-mais-linha]');
@@ -692,6 +813,15 @@
         var vz = w.querySelector('.tab-vazia');
         if (vz) { var nenhuma = trs.every(function (tr) { return tr.hidden; }); vz.hidden = !nenhuma; w.querySelector('table').hidden = nenhuma; }
       });
+      // blocos progressivos (indicadores 2 e 3): aparecem quando preenchidos ou pelo botão
+      app.querySelectorAll('.prog').forEach(function (p) {
+        var its = Array.prototype.filter.call(p.children, function (x) { return x.classList.contains('prog-item'); }), ultima = -1;
+        its.forEach(function (x, i) { if (temValor(x)) ultima = i; });
+        var n = Math.min(its.length, Math.max(Number(p.dataset.minimo), ultima + 1, p._abertas || 0));
+        its.forEach(function (x, i) { x.hidden = i >= n; });
+        p.querySelector('[data-mais-item]').hidden = n >= its.length;
+      });
+      abasObjetivos(c);
       app.querySelectorAll('[data-auto]').forEach(function (li) { li.classList.toggle('ok', autoOk(AUTO[Number(li.dataset.auto)], c)); });
       app.querySelectorAll('[data-espelho]').forEach(function (el) {
         var v = c[el.dataset.espelho], p = el.querySelector('p');
@@ -700,9 +830,10 @@
       });
       app.querySelectorAll('[data-esp]').forEach(function (el) {
         var e = ESPECIAIS[el.dataset.esp];
-        if (e && e.atualizar) e.atualizar(el, c, { n: Number(el.dataset.n) || 0 });
+        if (e && e.atualizar) e.atualizar(el, c, { n: el.dataset.n || 0 });
       });
       progresso(c);
+      trilha(c);
       var em = document.getElementById('empresaMeta');
       if (em) em.textContent = c.f0_empresa ? 'Empresa: ' + c.f0_empresa : 'Empresa ainda sem nome (Folha 0)';
     }
@@ -721,7 +852,7 @@
       }
       esp.secoes.forEach(function (s) {
         var sec = document.getElementById('s-' + s.id), n = 0;
-        sec.querySelectorAll('[data-k]').forEach(function (el) { if (!el.classList.contains('calc') && !vazio(el.type === 'checkbox' ? el.checked : el.value)) n++; });
+        sec.querySelectorAll('[data-k]').forEach(function (el) { if (preenchido(el)) n++; });
         var a = app.querySelector('.e-nav a[data-sec="' + s.id + '"] .sec-prog');
         if (a) { a.textContent = n || ''; a.parentNode.classList.toggle('tem', n > 0); }
       });
@@ -730,9 +861,7 @@
         (chkTot ? ' · lista final: ' + chk + ' de ' + chkTot : '');
     }
     function abrirMais() {
-      app.querySelectorAll('details.mais').forEach(function (d) {
-        if (Array.prototype.some.call(d.querySelectorAll('[data-k]'), function (el) { return !el.classList.contains('calc') && !vazio(el.type === 'checkbox' ? el.checked : el.value); })) d.open = true;
-      });
+      app.querySelectorAll('details.mais').forEach(function (d) { if (temValor(d)) d.open = true; });
     }
     function aplicar(c) {
       base = Object.assign({}, c);
@@ -764,6 +893,48 @@
     app.addEventListener('change', atualizarVisual);
     app.addEventListener('click', function (e) {
       if (e.target.closest('[data-salvar-arquivo]')) { WS.salvarArquivo(); return; }
+      var sel = e.target.closest('[data-obj-sel]');
+      if (sel) { escolherObjetivo(Number(sel.dataset.objSel), !sel.closest('.objs-nav')); return; }
+      var ir = e.target.closest('[data-obj-ir]');
+      if (ir) {
+        var box = ir.closest('[data-objs]'), ns = F.objetivos(todos()).map(function (o) { return o.n; }), i = ns.indexOf(box._sel) + Number(ir.dataset.objIr);
+        if (i >= ns.length) { var painel = app.querySelector('.esp-painel'); if (painel) painel.scrollIntoView({ block: 'start' }); return; }
+        if (i >= 0) escolherObjetivo(ns[i], true);
+        return;
+      }
+      var mi = e.target.closest('[data-mais-item]');
+      if (mi) {
+        var p = mi.closest('.prog'), vis = Array.prototype.filter.call(p.children, function (x) { return x.classList.contains('prog-item') && !x.hidden; });
+        p._abertas = vis.length + 1;
+        atualizarVisual();
+        var novo = Array.prototype.filter.call(p.children, function (x) { return x.classList.contains('prog-item') && !x.hidden; }).pop();
+        var cp = novo && novo.querySelector('textarea, input, select');
+        if (cp) cp.focus();
+        WS.agendarAlturas();
+        return;
+      }
+      var lp = e.target.closest('[data-limpar]');
+      if (lp) {
+        var cx = lp.closest('.caixa');
+        if (!temValor(cx) || !window.confirm('Apagar tudo o que está escrito neste ' + lp.textContent.replace(/^Limpar /, '') + '?')) return;
+        cx.querySelectorAll('[data-k]').forEach(function (el) { escrever(el, ''); });
+        var pg = cx.closest('.prog'); if (pg) pg._abertas = 0;
+        atualizarVisual(); ctrl.alterado(); WS.agendarAlturas();
+        return;
+      }
+      var us = e.target.closest('[data-usar]');
+      if (us) {
+        var livre = seq(F.N_OBJ).filter(function (n) { var el = porChave('f5a_o' + n + '_obj'); return el && !el.value.trim(); })[0];
+        if (!livre) { WS.toast('A tabela já tem 10 objetivos.'); return; }
+        escrever(porChave('f5a_o' + livre + '_obj'), us.dataset.usar);
+        if (us.dataset.tipo && !porChave('f5a_o' + livre + '_tipo').value) escrever(porChave('f5a_o' + livre + '_tipo'), us.dataset.tipo);
+        if (us.dataset.garg) escrever(porChave('f5a_o' + livre + '_garg'), true);
+        atualizarVisual(); ctrl.alterado(); WS.agendarAlturas();
+        var alvo = porChave('f5a_o' + livre + '_obj');
+        alvo.focus();
+        WS.toast('Levada para o objetivo ' + livre + '. Agora reescreva: verbo de resultado + objeto + qualificador.');
+        return;
+      }
       var ml = e.target.closest('[data-mais-linha]');
       if (ml) {
         var w = ml.closest('.tab-wrap');
@@ -842,7 +1013,7 @@
 
   /* ================= caderno completo ================= */
   function resumoSistema(c) {
-    var objs = F.objetivos(c), fs = F.fichas(c), as = F.acoes(c);
+    var objs = F.objetivos(c), as = F.acoes(c);
     if (!objs.length) return '';
     var grupos = F.PERSPECTIVAS.map(function (p) { return { p: p, os: objs.filter(function (o) { return o.persp === p[0]; }) }; });
     var sem = objs.filter(function (o) { return !o.persp; });
@@ -852,19 +1023,11 @@
       if (!g.os.length) return;
       h += '<h3 class="r-persp">' + esc(g.p[1]) + '</h3>';
       g.os.forEach(function (o) {
-        var ff = fs.filter(function (f) { return f.obj === o.n; }), aa = as.filter(function (a) { return a.obj === o.n; });
-        h += '<div class="r-obj"><div class="r-obj-cab"><span class="r-obj-n">' + o.n + '</span><strong>' + esc(o.texto) + '</strong><span class="r-obj-tipo ' + (o.tipo === 'POS' ? 'pos' : 'eo') + '">' + esc(o.tipo || '—') + (o.garg ? ' · gargalo' : '') + '</span></div>' +
-          '<table class="r-tab"><tbody>' +
-          '<tr><th>Indicador</th><td>' + br(o.ind || '—') + (o.ind2 ? '<br><small>Tendência: ' + br(o.ind2) + '</small>' : '') + '</td></tr>' +
-          '<tr><th>Linha de base → meta</th><td>' + esc((o.base || '—') + ' → ' + (o.meta || '—') + (o.prazo ? ' (' + o.prazo + ')' : '')) + '</td></tr>' +
-          ff.map(function (f) {
-            return '<tr><th>Ficha · ' + esc(f.nome || 'indicador') + '</th><td>' +
-              [f.formula && 'Fórmula: ' + esc(f.formula), f.unidade && 'Unidade: ' + esc(f.unidade), f.fonte && 'Fonte: ' + esc(f.fonte), f.freq && 'Frequência: ' + esc(f.freq), f.pol && esc(f.pol), f.resp && 'Responsável: ' + esc(f.resp)].filter(Boolean).join(' · ') +
-              (f.faixas ? '<br>Meta do período: ' + esc(F.fmtNum(f.faixas.meta, f.unidade)) + ' · 🟢 ' + esc(f.faixas.verde) + ' · 🟡 ' + esc(f.faixas.amarelo) + ' · 🔴 ' + esc(f.faixas.vermelho) : '') +
-              (f.gatAm ? '<br>🟡 Gatilho: ' + br(f.gatAm) : '') + (f.gatVerm ? '<br>🔴 Gatilho: ' + br(f.gatVerm) : '') + '</td></tr>';
-          }).join('') +
+        var aa = as.filter(function (a) { return a.obj === o.n; });
+        h += '<div class="r-obj">' + cabObjetivo(o) + '<table class="r-tab"><tbody>' +
+          (o.inds.length ? o.inds.map(linhaIndicador).join('') : '<tr><th>Indicador</th><td>—</td></tr>') +
           '<tr><th>Ações</th><td>' + (aa.length ? '<ul>' + aa.map(function (a) {
-            return '<li>' + esc(a.acao) + ' <small>(' + [a.prio, a.resp, a.prazo, a.custo].filter(Boolean).map(esc).join(' · ') + ')</small></li>';
+            return '<li>' + esc(a.acao) + ' <small>(' + [a.ind && 'move: ' + a.indNome, a.prio, a.resp, a.prazo, a.custo].filter(Boolean).map(esc).join(' · ') + ')</small></li>';
           }).join('') + '</ul>' : '—') + '</td></tr>' +
           (o.leva.length ? '<tr><th>Leva a</th><td>' + o.leva.map(function (t) { return esc(textoObjetivo(c, t)); }).join('<br>') + '</td></tr>' : '') +
           '</tbody></table></div>';

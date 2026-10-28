@@ -10,8 +10,9 @@
  * Página:  { id, codigo, aula, etapa, titulo, pergunta, resumo, guia: '01', secoes: [...], calcular(c) }
  * Seção:   { id, n: rótulo curto, nav: nome na barra de seções, folha, titulo, dica, passos: [...], guia: ['02', 'âncora'], exemplo: false, itens: [...] }
  * Itens:
- *   campo     { k, r: rótulo, tipo: 'texto' (padrão) | 'linha' | 'numero' | 'data' | 'opcoes' | 'check' | 'objetivo', ph, d: dica, op }
- *             tipo 'objetivo' = lista com os objetivos da Folha 5A
+ *   campo     { k, r: rótulo, tipo: 'texto' (padrão) | 'linha' | 'numero' | 'numerico' | 'data' | 'opcoes' | 'check' | 'objetivo' | 'indicador', ph, d: dica, op }
+ *             tipo 'objetivo' = lista com os objetivos da Folha 5A (guarda o nº); 'indicador' = lista com os indicadores do
+ *             objetivo escolhido na mesma linha (guarda "objetivo.indicador", ex.: "3.2")
  *   grupo     { t:'grupo', cols: 2|3, itens }
  *   caixa     { t:'caixa', r: título, d: dica, cls, itens }   (quadrante da TOWS, painel de um indicador...)
  *   tabela    { t:'tabela', r, cols: [{ r, tipo, op, ph, w }], linhas: [{ r, d, k: [chaves], rotuloDe, se(c) }], largo,
@@ -22,11 +23,14 @@
  *   nota      { t:'nota', html }          orientação (não vai para o PDF)
  *   espelho   { t:'espelho', k, r, vazio }  mostra, sem editar, uma resposta de outra folha
  *   trazer    { t:'trazer', r, mapa: { destino: origem } }
- *   checklist { t:'checklist', itens: [[k, texto] | { r: texto, auto: função(campos) }] }   "Sua folha está pronta quando…"
- *             (não vai para o PDF). [k, texto] = o participante marca (julgamento); { auto } = o caderno confere sozinho.
- *             A página fica "pronta" (na home) quando todos os itens estão ok.
+ *   checklist { t:'checklist', itens: [[k, texto] | { r: texto, auto: função(campos), ir: id da seção }] }   "Sua folha está pronta quando…"
+ *             (não vai para o PDF). [k, texto] = o participante marca (julgamento); { auto } = o caderno confere sozinho
+ *             (com "ir", o item pendente leva à seção onde se resolve). A página fica "pronta" (na home) quando todos os itens estão ok.
  *   especial  { t:'especial', nome, n }   componentes com lógica própria (motor.js › ESPECIAIS)
  *   mais      { t:'mais', r, itens }      bloco recolhível (abre sozinho se tiver algo preenchido)
+ *   caixa com limpar: true                botão "Limpar" que esvazia os campos da caixa
+ *   progressivo { t:'progressivo', minimo, botao, itens }   mostra "minimo" itens e os preenchidos; o botão abre o seguinte
+ *   porObjetivo { t:'porObjetivo', itens: [{ t:'objetivo', n, itens }] }   uma aba por objetivo escrito na Folha 5A
  *   Em qualquer campo: opcional: true (não conta no progresso), relatorio: false (não vai para o PDF)
  */
 (function () {
@@ -60,8 +64,8 @@
     ['pro', '⚙️ Processos internos', 'Em que precisamos ser excelentes?'],
     ['apr', '🌱 Aprendizado e crescimento', 'Que pessoas, competências, tecnologia e cultura sustentam tudo isso?']
   ];
-  // 10 fichas e painéis: os 3 primeiros ficam abertos (Aula 1); os outros, recolhidos (tarefa para a Aula 2)
-  var N_OBJ = 10, N_ACOES = 12, N_FICHAS = 10, N_FICHAS_ABERTAS = 3;
+  // até 10 objetivos, cada um com até 3 indicadores (chaves f5a_o{i}_i{j}_* e f5b_o{i}_i{j}_*), e até 12 ações
+  var N_OBJ = 10, N_IND = 3, N_ACOES = 12;
   function seq(n) { var a = []; for (var i = 1; i <= n; i++) a.push(i); return a; }
   var AB = [['A', 'Alto'], ['B', 'Baixo']];
   /* Itens das listas finais que o próprio caderno confere ({ auto: função(campos), r: texto }); os demais são marcados à mão. */
@@ -118,7 +122,7 @@
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Sua folha está pronta quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
           ['f0_chk1', 'A frase 1 descreve o negócio real de hoje, sem adjetivos.'],
-          { r: 'A frase 2 tem uma parte qualitativa e um número.', auto: function (c) { return tem(c, 'f0_fut_reconhecidos') && /\d/.test(c.f0_fut_numero || ''); } },
+          { r: 'A frase 2 tem uma parte qualitativa e um número.', ir: 'futuro', auto: function (c) { return tem(c, 'f0_fut_reconhecidos') && /\d/.test(c.f0_fut_numero || ''); } },
           ['f0_chk3', 'Os participantes da mesma empresa concordam com as duas frases (ou registraram a divergência).']
         ] } ] }
     ]
@@ -189,11 +193,11 @@
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Suas folhas estão prontas quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
           ['f2_chk1', 'As 3 oportunidades e as 3 ameaças são específicas para a sua empresa.'],
-          { r: 'Cada força e fraqueza tem uma evidência (ou está marcada como "a levantar").', auto: function (c) { return seq(3).every(function (i) { return tem(c, 'f1_f' + i) && tem(c, 'f1_f' + i + '_ev') && tem(c, 'f1_q' + i) && tem(c, 'f1_q' + i + '_ev'); }); } },
+          { r: 'Cada força e fraqueza tem uma evidência (ou está marcada como "a levantar").', ir: 'interno', auto: function (c) { return seq(3).every(function (i) { return tem(c, 'f1_f' + i) && tem(c, 'f1_f' + i + '_ev') && tem(c, 'f1_q' + i) && tem(c, 'f1_q' + i + '_ev'); }); } },
           ['f2_chk3', 'Nenhum item interno está no externo, e vice-versa.'],
-          { r: 'Há pelo menos uma direção em cada quadrante da TOWS.', auto: function (c) { return QUADS.every(function (q) { return tem(c, 'f2_' + q + '1') || tem(c, 'f2_' + q + '2'); }); } },
+          { r: 'Há pelo menos uma direção em cada quadrante da TOWS.', ir: 'tows', auto: function (c) { return QUADS.every(function (q) { return tem(c, 'f2_' + q + '1') || tem(c, 'f2_' + q + '2'); }); } },
           ['f2_chk4', 'Cada direção começa com um verbo e é uma ação estratégica, não a reescrita de um item.'],
-          { r: 'Cada direção indica os itens da Folha 1 que a originaram.', auto: function (c) { var n = 0; return QUADS.every(function (q) { return [1, 2].every(function (i) { if (!tem(c, 'f2_' + q + i)) return true; n++; return tem(c, 'f2_' + q + i + '_orig'); }); }) && n > 0; } }
+          { r: 'Cada direção indica os itens da Folha 1 que a originaram.', ir: 'tows', auto: function (c) { var n = 0; return QUADS.every(function (q) { return [1, 2].every(function (i) { if (!tem(c, 'f2_' + q + i)) return true; n++; return tem(c, 'f2_' + q + i + '_orig'); }); }) && n > 0; } }
         ] } ] }
     ]
   };
@@ -260,13 +264,13 @@
         ] },
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Suas folhas estão prontas quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
-          { r: 'Cada uma das 5 dimensões de EO tem estágio, evidência e próximo passo.', auto: function (c) { return DIMS_EO.every(function (d) { return tem(c, 'f3a_' + d.id + '_est') && tem(c, 'f3a_' + d.id + '_ev') && tem(c, 'f3a_' + d.id + '_prox'); }); } },
-          { r: 'O gargalo está identificado.', auto: function (c) { return nomesGargalo(c).length > 0; } },
-          { r: 'Há 2 ou 3 direções de EO, com pelo menos uma no gargalo.', auto: function (c) {
+          { r: 'Cada uma das 5 dimensões de EO tem estágio, evidência e próximo passo.', ir: 'matriz', auto: function (c) { return DIMS_EO.every(function (d) { return tem(c, 'f3a_' + d.id + '_est') && tem(c, 'f3a_' + d.id + '_ev') && tem(c, 'f3a_' + d.id + '_prox'); }); } },
+          { r: 'O gargalo está identificado.', ir: 'matriz', auto: function (c) { return nomesGargalo(c).length > 0; } },
+          { r: 'Há 2 ou 3 direções de EO, com pelo menos uma no gargalo.', ir: 'direcoes-eo', auto: function (c) {
             var eo = seq(3).filter(function (i) { return tem(c, 'f3a_eo' + i); }), g = nomesGargalo(c);
             return eo.length >= 2 && eo.some(function (i) { return g.indexOf(c['f3a_eo' + i + '_dim']) >= 0; });
           } },
-          { r: 'O posicionamento tem base definida e de 4 a 6 atividades ligadas entre si.', auto: function (c) {
+          { r: 'O posicionamento tem base definida e de 4 a 6 atividades ligadas entre si.', ir: 'sistema', auto: function (c) {
             var at = seq(6).filter(function (i) { return tem(c, 'f3b_at' + i); });
             return tem(c, 'f3b_pos') && tem(c, 'f3b_base') && at.length >= 4 && at.every(function (i) { return tem(c, 'f3b_at' + i + '_liga') || at.some(function (j) { return WS_F.numeros(c['f3b_at' + j + '_liga']).indexOf(i) >= 0; }); });
           } },
@@ -322,12 +326,12 @@
         ] },
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Sua folha está pronta quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
-          { r: 'De 3 a 5 itens estão na BCG, cada um com uma decisão.', auto: function (c) { var it = seq(5).filter(function (i) { return tem(c, 'f4_bcg' + i + '_item'); }); return it.length >= 3 && it.every(function (i) { return tem(c, 'f4_bcg' + i + '_dec'); }); } },
-          { r: 'O portfólio tem pelo menos uma fonte de caixa (vaca leiteira ou estrela) e uma aposta de futuro (estrela ou interrogação).', auto: function (c) {
+          { r: 'De 3 a 5 itens estão na BCG, cada um com uma decisão.', ir: 'bcg', auto: function (c) { var it = seq(5).filter(function (i) { return tem(c, 'f4_bcg' + i + '_item'); }); return it.length >= 3 && it.every(function (i) { return tem(c, 'f4_bcg' + i + '_dec'); }); } },
+          { r: 'O portfólio tem pelo menos uma fonte de caixa (vaca leiteira ou estrela) e uma aposta de futuro (estrela ou interrogação).', ir: 'bcg', auto: function (c) {
             var q = BLOCO3.calcular(c), qs = seq(5).map(function (i) { return q['f4_bcg' + i + '_quad']; });
             return qs.some(function (x) { return /Vaca|Estrela/.test(x); }) && qs.some(function (x) { return /Estrela|Interroga/.test(x); });
           } },
-          { r: 'Há um vetor de Ansoff prioritário, com justificativa.', auto: function (c) { return tem(c, 'f4_ans_vetor') && tem(c, 'f4_ans_just'); } },
+          { r: 'Há um vetor de Ansoff prioritário, com justificativa.', ir: 'ansoff', auto: function (c) { return tem(c, 'f4_ans_vetor') && tem(c, 'f4_ans_just'); } },
           ['f4_chk4', 'A escolha é coerente com o trade-off (Folha 3B) e com a maturidade (Folha 3A).']
         ] } ] }
     ],
@@ -343,116 +347,88 @@
 
   /* =====================================================================
    * Bloco 4 · Folhas 5A (Objetivos e indicadores) e 5B (Painel de controle)
+   * Passo 1: os objetivos (EO/POS, gargalo). Passo 2: para cada objetivo, de 1 a 3 indicadores, cada um com
+   * teste da vaidade, ficha, meta e farol (5B). O painel de controle se monta sozinho com esses indicadores.
    * ===================================================================== */
-  function fichaItens(n) {
-    var p = 'f5a_fc' + n + '_';
-    return [
-      { t: 'sub', r: 'Ficha ' + n },
+  function indicadorItens(i, j) {
+    var p = 'f5a_o' + i + '_i' + j + '_', b = 'f5b_o' + i + '_i' + j + '_', ref = i + '.' + j;
+    return { t: 'caixa', cls: 'ind', r: 'Indicador ' + j, rotuloDe: p + 'nome', limpar: true, itens: [
+      { t: 'especial', nome: 'indEstado', n: ref },
       { t: 'grupo', cols: 3, itens: [
-        { k: p + 'obj', r: 'Objetivo que mede', tipo: 'objetivo' },
-        { k: p + 'nome', r: 'Nome do indicador', tipo: 'linha', ph: 'Curto e claro' },
+        { k: p + 'nome', r: 'Nome do indicador', tipo: 'linha', ph: 'A régua. Ex.: % da receita que é recorrente' },
+        { k: p + 'tipo', r: 'Tipo', tipo: 'opcoes', op: ['Resultado', 'Tendência'], d: 'Resultado mostra se chegou; tendência avisa antes.' },
+        { k: p + 'vaid', r: 'Passa no teste da vaidade?', tipo: 'check', d: 'Se este número cair, vocês mudam alguma coisa? Marque só se a resposta for sim.' }
+      ] },
+      { t: 'sub', r: 'Ficha' },
+      { t: 'grupo', cols: 3, itens: [
         { k: p + 'formula', r: 'Fórmula', tipo: 'linha', ph: 'Como se calcula' },
         { k: p + 'unidade', r: 'Unidade', tipo: 'linha', ph: 'R$, %, dias, nº…' },
         { k: p + 'fonte', r: 'Fonte do dado', tipo: 'linha', ph: 'De onde vem' },
         { k: p + 'freq', r: 'Frequência', tipo: 'opcoes', op: ['Semanal', 'Quinzenal', 'Mensal', 'Trimestral', 'Semestral'] },
         { k: p + 'pol', r: 'Polaridade', tipo: 'opcoes', op: ['Quanto maior, melhor', 'Quanto menor, melhor'] },
-        { k: p + 'base', r: 'Linha de base', tipo: 'linha', ph: 'Valor atual ou "a levantar"' },
-        { k: p + 'meta', r: 'Meta (valor e prazo)', tipo: 'linha', ph: 'Ex.: R$ 60 mil no trimestre; R$ 110 mil até dez/2027' },
-        { k: p + 'resp', r: 'Responsável (uma pessoa)', tipo: 'linha' }
-      ] }
-    ];
-  }
-  function painelItens(n) {
-    var p = 'f5b_p' + n + '_';
-    return { t: 'caixa', r: 'Indicador ' + n, cls: 'painel', rotuloDe: 'f5a_fc' + n + '_nome', itens: [
-      { t: 'grupo', cols: 3, itens: [
-        { k: p + 'meta', r: 'Meta do próximo período (só o número)', tipo: 'numerico', ph: 'Ex.: 60000', d: 'É contra ela que o farol compara.' },
-        { k: p + 'tol', r: 'Tolerância do amarelo (%)', tipo: 'numerico', ph: '15', d: 'Padrão 15. Críticos (caixa, perda de clientes): 5. Tendência: 25 ou mais.' },
-        { k: p + 'sim', r: 'Simulador: um resultado hipotético', tipo: 'numerico', ph: 'Ex.: 49000', d: 'Digite um valor e veja a cor. Não vai para o PDF.', relatorio: false }
+        { k: p + 'resp', r: 'Responsável', tipo: 'linha', ph: 'Uma pessoa, não uma área' }
       ] },
-      { t: 'especial', nome: 'farol', n: n },
+      { t: 'sub', r: 'Meta' },
+      { t: 'grupo', cols: 3, itens: [
+        { k: p + 'base', r: 'Linha de base', tipo: 'linha', ph: 'Valor atual ou "a levantar"' },
+        { k: p + 'meta', r: 'Meta', tipo: 'linha', ph: 'Ex.: 55%' },
+        { k: p + 'prazo', r: 'Prazo', tipo: 'linha', ph: 'Ex.: dez/2027' }
+      ] },
+      { t: 'sub', r: 'Farol (Folha 5B)' },
+      { t: 'grupo', cols: 3, itens: [
+        { k: b + 'mp', r: 'Meta do próximo período (só o número)', tipo: 'numerico', ph: 'Ex.: 60000', d: 'Mês ou trimestre: é contra ela que o farol compara.' },
+        { k: b + 'am', r: '🟡 Amarelo a partir de quantos % pior que a meta?', tipo: 'numerico', ph: 'Ex.: 0', d: '0 = qualquer resultado pior que a meta já acende o amarelo.' },
+        { k: b + 'vm', r: '🔴 Vermelho a partir de quantos % pior que a meta?', tipo: 'numerico', ph: 'Ex.: 15', d: 'Usual: 15. Críticos (caixa, perda de clientes): 5. Tendência: 25 ou mais.' }
+      ] },
+      { t: 'especial', nome: 'faixas', n: ref },
       { t: 'grupo', cols: 2, itens: [
-        { k: p + 'gat_am', r: '🟡 Gatilho do amarelo', ph: 'Quem analisa e qual a primeira verificação' },
-        { k: p + 'gat_verm', r: '🔴 Gatilho do vermelho', ph: 'Quem é acionado e em quanto tempo sai o plano corretivo' }
+        { k: b + 'gam', r: '🟡 Gatilho do amarelo', tipo: 'linha', ph: 'Quem analisa e qual a primeira verificação' },
+        { k: b + 'gvm', r: '🔴 Gatilho do vermelho', tipo: 'linha', ph: 'Quem é acionado e em quanto tempo sai o plano corretivo' }
       ] }
     ] };
   }
   var BLOCO4 = {
     id: 'bloco4', codigo: 'Folhas 5A e 5B', aula: 'Aula 1', etapa: 'Bloco 4', titulo: 'Objetivos, indicadores e faróis',
     pergunta: 'Como saberemos se estamos chegando lá, e quando é preciso corrigir a rota?',
-    resumo: 'Transforme as direções em 6 a 10 objetivos, cada um com indicador, linha de base, meta e prazo. Os três indicadores principais ganham ficha completa, faixas de farol definidas antes de medir e gatilhos para o amarelo e o vermelho.',
+    resumo: 'Primeiro, transforme as direções em 6 a 10 objetivos (EO ou POS). Depois, para cada objetivo, desenvolva de 1 a 3 indicadores: cada um passa no teste da vaidade e ganha ficha, meta e um farol com faixas que vocês definem antes de medir. O painel de controle se monta sozinho.',
     guia: '05',
     secoes: [
-      { id: 'objetivos', n: '5A', nav: 'Objetivos', folha: 'Folha 5A', titulo: 'Objetivos e indicadores',
-        dica: 'Objetivo = verbo de resultado + objeto + qualificador. De 6 a 10, com pelo menos 2 de POS e 1 de EO ligado ao gargalo. Sem linha de base, escreva "a levantar": isso vira tarefa para a Aula 2.',
+      { id: 'objetivos', n: '5A', nav: 'Objetivos', folha: 'Folha 5A', titulo: 'Os objetivos',
+        dica: 'Objetivo = verbo de resultado + objeto + qualificador. De 6 a 10, com pelo menos 2 de posicionamento (POS) e 1 de eficácia operacional (EO) que ataque o gargalo. Os indicadores vêm no passo seguinte.',
         guia: ['05', '1-do-verbo-ao-objetivo'],
-        passos: ['Parta das direções que você já tem (logo abaixo) e redija cada uma como objetivo. Marque EO ou POS, e "gargalo" nos que atacam a dimensão gargalo.', 'Para cada objetivo, um indicador de resultado e, se fizer sentido, um de tendência.', 'Preencha linha de base, meta e prazo. A conferência embaixo da tabela mostra o que falta.'],
+        passos: ['Use ＋ para levar uma direção das folhas anteriores para a próxima linha livre e reescreva como objetivo.', 'Marque EO ou POS e, nos que atacam a dimensão gargalo da Folha 3A, "Ataca o gargalo".'],
         itens: [
           { t: 'especial', nome: 'direcoes' },
-          { t: 'tabela', largo: true, item: 'Objetivo', minimo: 6,
-            cols: [{ r: 'Objetivo', w: '19%', ph: 'Verbo + objeto + qualificador' }, { r: 'EO/POS', tipo: 'opcoes', op: ['EO', 'POS'], w: '8%' }, { r: 'Gargalo', tipo: 'check', w: '6%' },
-              { r: 'Indicador de resultado', w: '15%' }, { r: 'Indicador de tendência (opcional)', w: '13%' },
-              { r: 'Linha de base', tipo: 'linha', w: '10%' }, { r: 'Meta', tipo: 'linha', w: '10%' }, { r: 'Prazo', tipo: 'linha', ph: 'mês/ano', w: '12%' }],
-            linhas: seq(N_OBJ).map(function (i) { var p = 'f5a_o' + i + '_'; return { r: String(i), k: [p + 'obj', p + 'tipo', p + 'garg', p + 'ind', p + 'ind2', p + 'base', p + 'meta', p + 'prazo'] }; }) },
+          { t: 'tabela', item: 'Objetivo', minimo: 6,
+            cols: [{ r: 'Objetivo', tipo: 'linha', ph: 'Verbo de resultado + objeto + qualificador' }, { r: 'Tipo', tipo: 'opcoes', op: [['EO', 'EO · eficácia operacional'], ['POS', 'POS · posicionamento']], w: '26%' }, { r: 'Ataca o gargalo?', tipo: 'check', w: '13%' }],
+            linhas: seq(N_OBJ).map(function (i) { var p = 'f5a_o' + i + '_'; return { r: String(i), k: [p + 'obj', p + 'tipo', p + 'garg'] }; }) },
           { t: 'especial', nome: 'validador' }
         ] },
-      { id: 'fichas', n: '5A', nav: 'Fichas', folha: 'Folha 5A', titulo: 'Fichas dos três indicadores principais',
-        dica: 'Responsável é uma pessoa, não uma área. Indicador que ninguém consegue medir: ou cria-se a fonte, ou troca-se o indicador.',
-        guia: ['05', '5-a-ficha-do-indicador'],
-        passos: ['Escolha os 3 indicadores que mais importam para o plano.', 'Preencha a ficha completa de cada um. As faixas do farol vêm logo abaixo, na Folha 5B.', 'Tarefa para a Aula 2: as fichas dos demais indicadores (abra "Fichas 4 a 10").'],
-        itens: [].concat(fichaItens(1), fichaItens(2), fichaItens(3),
-          [{ t: 'mais', r: 'Fichas 4 a 10 (tarefa para a Aula 2: uma por indicador)', itens: [].concat.apply([], seq(N_FICHAS).slice(N_FICHAS_ABERTAS).map(fichaItens)) }]) },
-      { id: 'vaidade', n: '5A', nav: 'Vaidade', folha: 'Folha 5A', titulo: 'Teste da vaidade',
-        dica: 'Em dupla com outra empresa, aplique aos indicadores dela a pergunta "se este número cair, eu mudo alguma coisa?" e marque os suspeitos.',
-        guia: ['05', '4-cuidado-com-as-metricas-de-vaidade'],
-        itens: [ { k: 'f5a_vaidade', r: 'Indicadores marcados como suspeitos e o que vocês fizeram', ph: 'Ex.: "Downloads do app" foi marcado; trocamos por "cooperativas ativas na plataforma".' } ] },
-      { id: 'painel', n: '5B', nav: 'Faróis', folha: 'Folha 5B', titulo: 'Painel de controle: faixas do farol e gatilhos',
-        dica: 'As faixas são combinadas agora, antes de medir, nunca depois de ver o resultado. Regra extra: piorar em duas medições seguidas também acende o amarelo.',
-        guia: ['05', 'os-farois-como-controlar-e-corrigir-a-rota'],
-        passos: ['Para cada indicador com ficha, defina a meta do próximo período (mês ou trimestre).', 'Ajuste a tolerância se o indicador for crítico ou de tendência: as faixas se calculam sozinhas.', 'Escreva o gatilho do amarelo e o do vermelho.'],
-        itens: seq(N_FICHAS_ABERTAS).map(painelItens).concat(
-          [{ t: 'mais', r: 'Painéis 4 a 10 (tarefa para a Aula 2: um por ficha)', itens: seq(N_FICHAS).slice(N_FICHAS_ABERTAS).map(painelItens) }]) },
-      { id: 'simulacao', n: '5B', nav: 'Simulação', folha: 'Folha 5B', titulo: 'Simulação: o indicador ficou 20% pior que a meta',
-        dica: 'Você sabe dizer a cor, quem age, o que acontece e até quando? Se a resposta não estiver no painel, o protocolo está incompleto.',
-        guia: ['05', 'regra-4-cada-cor-tem-uma-resposta'],
+      { id: 'indicadores', n: '5A·5B', nav: 'Indicadores e faróis', folha: 'Folhas 5A e 5B', titulo: 'Os indicadores de cada objetivo, com ficha e farol',
+        dica: 'Até 3 indicadores por objetivo: combine um de resultado (mostra se chegou) com um de tendência (avisa antes). As faixas do farol são decididas agora, antes de medir, nunca depois de ver o resultado. Na Aula 1, complete pelo menos 3 indicadores; os demais ficam como tarefa para a Aula 2.',
+        guia: ['05', '2-indicador-meta'],
+        passos: ['Escolha um objetivo nas abas: cada aba mostra o que ainda falta nele.', 'Dê nome ao indicador e faça o teste da vaidade. Se ele não passar, troque o indicador.', 'No farol, a empresa decide a partir de quantos % pior que a meta ele fica amarelo e vermelho: as faixas aparecem na hora.', 'Siga para o próximo objetivo pelo botão no fim da aba.'],
         itens: [
-          { t: 'especial', nome: 'simulacao' },
-          { k: 'f5b_sim_resp', r: 'Para o indicador 1: cor, quem age, o que acontece e até quando', ph: 'Ex.: 🔴 vermelho → 5 porquês → plano corretivo em até 7 dias, responsável: sócio de operações.' }
-        ] },
-      { id: 'registro', n: '5B', nav: 'Correção de rota', folha: 'Folha 5B', titulo: 'Registro de correção de rota',
-        dica: 'Para usar depois do workshop, a partir da primeira medição: cada amarelo ou vermelho vira uma linha. É esse registro que transforma o painel em aprendizado. Vermelho por dois ciclos seguidos: é problema de execução ou de estratégia?',
-        guia: ['05', 'o-ritual'],
-        itens: [
-          { t: 'tabela', largo: true, item: 'Registro', minimo: 2,
-            cols: [{ r: 'Data', tipo: 'data', w: '12%' }, { r: 'Indicador', tipo: 'linha', w: '14%' }, { r: 'Cor', tipo: 'opcoes', op: ['🟡 Amarelo', '🔴 Vermelho'], w: '11%' }, { r: 'Causa identificada' }, { r: 'Ação corretiva' },
-              { r: 'Responsável', tipo: 'linha', w: '11%' }, { r: 'Prazo', tipo: 'linha', w: '8%' }, { r: 'Status', tipo: 'opcoes', op: ['A iniciar', 'Em andamento', 'Concluída'], w: '11%' }],
-            linhas: seq(5).map(function (i) { var p = 'f5b_rc' + i + '_'; return { r: String(i), k: [p + 'data', p + 'ind', p + 'cor', p + 'causa', p + 'acao', p + 'resp', p + 'prazo', p + 'status'] }; }) }
+          { t: 'porObjetivo', itens: seq(N_OBJ).map(function (i) {
+            return { t: 'objetivo', n: i, itens: [{ t: 'progressivo', minimo: 1, botao: '＋ Acrescentar outro indicador a este objetivo (até 3)', itens: seq(N_IND).map(function (j) { return indicadorItens(i, j); }) }] };
+          }) },
+          { t: 'especial', nome: 'painel' }
         ] },
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Suas folhas estão prontas quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
-          { r: 'Há de 6 a 10 objetivos, com pelo menos 2 de POS e 1 de EO no gargalo.', auto: function (c) {
+          { r: 'Há de 6 a 10 objetivos, com pelo menos 2 de POS e 1 de EO no gargalo.', ir: 'objetivos', auto: function (c) {
             var o = WS_F.objetivos(c);
             return o.length >= 6 && o.length <= 10 && o.filter(function (x) { return x.tipo === 'POS'; }).length >= 2 && o.some(function (x) { return x.tipo === 'EO' && x.garg; });
           } },
-          { r: 'Cada objetivo tem indicador, linha de base (ou "a levantar"), meta e prazo.', auto: function (c) { var o = WS_F.objetivos(c); return o.length > 0 && o.every(function (x) { return x.ind && x.base && x.meta && x.prazo; }); } },
-          { r: 'Pelo menos 3 indicadores têm ficha completa.', auto: function (c) {
-            return WS_F.fichas(c).filter(function (f) { return f.obj && f.nome && f.formula && f.unidade && f.fonte && f.freq && f.pol && f.base && f.meta && f.resp; }).length >= 3;
+          ['f5_chk7', 'Cada objetivo está redigido como verbo de resultado + objeto + qualificador.'],
+          { r: 'Cada objetivo tem de 1 a 3 indicadores, todos aprovados no teste da vaidade.', ir: 'indicadores', auto: function (c) {
+            var o = WS_F.objetivos(c);
+            return o.length > 0 && o.every(function (x) { return x.inds.length > 0 && x.inds.every(function (y) { return y.vaid; }); });
           } },
-          ['f5_chk4', 'Nenhum indicador falha no teste da vaidade.'],
-          { r: 'Os 3 indicadores principais têm faixas de farol e gatilhos de amarelo e vermelho.', auto: function (c) { return WS_F.fichas(c).filter(function (f) { return f.faixas && f.gatAm && f.gatVerm; }).length >= 3; } },
-          ['f5_chk6', 'Você consegue responder à simulação: cor, quem age, o que acontece e até quando.']
+          { r: 'Cada indicador tem nome, tipo, linha de base (ou "a levantar"), meta e prazo.', ir: 'indicadores', auto: function (c) { var i = WS_F.indicadores(c); return i.length > 0 && i.every(function (x) { return x.essencial; }); } },
+          { r: 'Pelo menos 3 indicadores estão completos: ficha, faixas de farol e gatilhos de amarelo e vermelho.', ir: 'indicadores', auto: function (c) { return WS_F.indicadores(c).filter(function (x) { return x.ok; }).length >= 3; } }
         ] } ] }
-    ],
-    calcular: function (c) {
-      var out = {};
-      seq(N_FICHAS).forEach(function (n) {
-        var f = WS_F.faixas(c, n);
-        out['f5b_p' + n + '_verde'] = f ? f.verde : '';
-        out['f5b_p' + n + '_amarelo'] = f ? f.amarelo : '';
-        out['f5b_p' + n + '_vermelho'] = f ? f.vermelho : '';
-      });
-      return out;
-    }
+    ]
   };
 
   /* =====================================================================
@@ -467,10 +443,10 @@
       { id: 'acoes', n: '6', nav: 'Ações', folha: 'Folha 6', titulo: 'Ações e teste da alavanca',
         dica: 'Ação estratégica tem começo, meio e fim: rotina ("atender clientes") e intenção ("melhorar o financeiro") não entram.',
         guia: ['06', 'o-teste-da-alavanca'],
-        passos: ['Para cada objetivo da Folha 5A, liste de 1 a 3 ações.', 'Teste da alavanca: "se fizermos isto, qual indicador se move, em quanto e em quanto tempo?" Sem resposta, apague a ação.', 'Classifique impacto e esforço: a prioridade aparece sozinha.'],
+        passos: ['Para cada objetivo da Folha 5A, liste de 1 a 3 ações.', 'Teste da alavanca: escolha o indicador que a ação move e diga em quanto e em quanto tempo. Sem resposta, apague a ação.', 'Classifique impacto e esforço: a prioridade aparece sozinha.'],
         itens: [
           { t: 'tabela', largo: true, item: 'Ação', minimo: 5,
-            cols: [{ r: 'Objetivo', tipo: 'objetivo', w: '18%' }, { r: 'Ação', w: '19%' }, { r: 'Indicador que move', w: '12%' }, { r: 'Em quanto e em quanto tempo?', ph: 'Teste da alavanca' },
+            cols: [{ r: 'Objetivo', tipo: 'objetivo', w: '18%' }, { r: 'Ação', w: '19%' }, { r: 'Indicador que move', tipo: 'indicador', w: '15%' }, { r: 'Em quanto e em quanto tempo?', ph: 'Teste da alavanca' },
               { r: 'Impacto', tipo: 'opcoes', op: AB, w: '11%' }, { r: 'Esforço', tipo: 'opcoes', op: AB, w: '11%' }, { r: 'Prioridade', tipo: 'calc', w: '10%' }],
             linhas: seq(N_ACOES).map(function (i) { var p = 'f6_a' + i + '_'; return { r: String(i), k: [p + 'obj', p + 'acao', p + 'ind', p + 'alav', p + 'imp', p + 'esf', p + 'prio'] }; }) },
           { t: 'especial', nome: 'priorizacao' }
@@ -488,17 +464,17 @@
         ] },
       { id: 'pronta', n: '✓', nav: 'Pronta?', titulo: 'Sua folha está pronta quando…', exemplo: false,
         itens: [ { t: 'checklist', itens: [
-          { r: 'Cada objetivo tem de 1 a 3 ações, e todas têm o teste da alavanca respondido.', auto: function (c) {
+          { r: 'Cada objetivo tem de 1 a 3 ações, e todas têm o teste da alavanca respondido.', ir: 'acoes', auto: function (c) {
             var o = WS_F.objetivos(c), a = WS_F.acoes(c);
             return o.length > 0 && o.every(function (x) { var n = a.filter(function (y) { return y.obj === x.n; }).length; return n >= 1 && n <= 3; }) && a.every(function (y) { return y.ind && y.alav; });
           } },
           ['f6_chk1', 'As ações são estratégicas (têm começo e fim), não rotina nem intenção.'],
-          { r: 'Cada indicador do painel (Folha 5B) tem pelo menos uma ação vinculada.', auto: function (c) { var a = WS_F.acoes(c), f = WS_F.fichas(c).filter(function (x) { return x.obj; }); return f.length > 0 && f.every(function (x) { return a.some(function (y) { return y.obj === x.obj; }); }); } },
-          { r: 'As ações em "Fazer já" e "Planejar" têm responsável, prazo e custo estimado.', auto: function (c) {
+          { r: 'Cada indicador do painel (Folha 5B) tem pelo menos uma ação vinculada.', ir: 'acoes', auto: function (c) { var a = WS_F.acoes(c), f = WS_F.indicadores(c); return f.length > 0 && f.every(function (x) { return a.some(function (y) { return y.obj === x.obj; }); }); } },
+          { r: 'As ações em "Fazer já" e "Planejar" têm responsável, prazo e custo estimado.', ir: 'detalhe', auto: function (c) {
             var a = WS_F.acoes(c).filter(function (y) { return y.prio === 'Fazer já' || y.prio === 'Planejar'; });
             return a.length > 0 && a.every(function (y) { return y.resp && y.prazo && y.custo; });
           } },
-          { r: 'Não há mais de 8 ações em andamento ao mesmo tempo.', auto: function (c) { var a = WS_F.acoes(c).filter(function (y) { return y.prio === 'Fazer já' || y.prio === 'Planejar'; }); return a.length > 0 && a.length <= 8; } }
+          { r: 'Não há mais de 8 ações em andamento ao mesmo tempo.', ir: 'acoes', auto: function (c) { var a = WS_F.acoes(c).filter(function (y) { return y.prio === 'Fazer já' || y.prio === 'Planejar'; }); return a.length > 0 && a.length <= 8; } }
         ] } ] }
     ],
     calcular: function (c) {
@@ -618,40 +594,76 @@
     if (u === '%') return t + '%';
     return u ? t + ' ' + u : t;
   }
-  function maiorMelhor(c, n) { return c['f5a_fc' + n + '_pol'] !== 'Quanto menor, melhor'; }
-  /* Faixas do farol de um painel (regra-padrão com a tolerância escolhida). */
-  function faixas(c, n) {
-    var meta = numBR(c['f5b_p' + n + '_meta']);
-    if (isNaN(meta)) return null;
-    var tol = numBR(c['f5b_p' + n + '_tol']);
-    if (isNaN(tol) || tol < 0 || tol >= 100) tol = 15;
-    var u = c['f5a_fc' + n + '_unidade'];
-    if (maiorMelhor(c, n)) {
-      var lim = meta * (1 - tol / 100);
-      return { meta: meta, tol: tol, lim: lim, maior: true,
-        verde: '≥ ' + fmtNum(meta, u), amarelo: 'de ' + fmtNum(lim, u) + ' a menos de ' + fmtNum(meta, u), vermelho: '< ' + fmtNum(lim, u) };
-    }
-    var lim2 = meta * (1 + tol / 100);
-    return { meta: meta, tol: tol, lim: lim2, maior: false,
-      verde: '≤ ' + fmtNum(meta, u), amarelo: 'acima de ' + fmtNum(meta, u) + ' até ' + fmtNum(lim2, u), vermelho: '> ' + fmtNum(lim2, u) };
+  /* Faixas do farol de um indicador: a empresa decide a partir de quantos % pior que a meta do período
+   * o farol fica amarelo (am) e vermelho (vm). Devolve null (falta algo), { erro } ou as faixas. */
+  function faixas(c, i, j) {
+    var p = 'f5a_o' + i + '_i' + j + '_', b = 'f5b_o' + i + '_i' + j + '_';
+    var meta = numBR(c[b + 'mp']), am = numBR(c[b + 'am']), vm = numBR(c[b + 'vm']);
+    if (isNaN(meta) || isNaN(am) || isNaN(vm)) return null;
+    var maior = c[p + 'pol'] !== 'Quanto menor, melhor', u = c[p + 'unidade'];
+    if (am < 0 || vm <= am) return { erro: 'O vermelho precisa começar num % maior que o do amarelo.' };
+    if (maior && vm > 100) return { erro: 'Num indicador "quanto maior, melhor", o vermelho não pode passar de 100% pior que a meta.' };
+    var limA = meta * (1 + (maior ? -am : am) / 100), limV = meta * (1 + (maior ? -vm : vm) / 100);
+    var f = { meta: meta, am: am, vm: vm, limA: limA, limV: limV, maior: maior };
+    if (maior) { f.verde = '≥ ' + fmtNum(limA, u); f.amarelo = 'de ' + fmtNum(limV, u) + ' a menos de ' + fmtNum(limA, u); f.vermelho = '< ' + fmtNum(limV, u); }
+    else { f.verde = '≤ ' + fmtNum(limA, u); f.amarelo = 'acima de ' + fmtNum(limA, u) + ' até ' + fmtNum(limV, u); f.vermelho = '> ' + fmtNum(limV, u); }
+    return f;
   }
   function cor(f, valor) {
-    if (!f || isNaN(valor)) return null;
-    if (f.maior) return valor >= f.meta ? 'verde' : valor >= f.lim ? 'amarelo' : 'vermelho';
-    return valor <= f.meta ? 'verde' : valor <= f.lim ? 'amarelo' : 'vermelho';
+    if (!f || f.erro || isNaN(valor)) return null;
+    if (f.maior) return valor >= f.limA ? 'verde' : valor >= f.limV ? 'amarelo' : 'vermelho';
+    return valor <= f.limA ? 'verde' : valor <= f.limV ? 'amarelo' : 'vermelho';
   }
   function prioridade(imp, esf) {
     if (!imp || !esf) return '';
     if (imp === 'A') return esf === 'B' ? 'Fazer já' : 'Planejar';
     return esf === 'B' ? 'Encaixar' : 'Descartar';
   }
-  function objetivos(c) {
+  /* Campos de cada indicador, na ordem em que aparecem na folha: [chave sem prefixo, nome para a pessoa]. */
+  var CAMPOS_IND = [['nome', 'nome'], ['tipo', 'tipo'], ['vaid', 'teste da vaidade'], ['formula', 'fórmula'], ['unidade', 'unidade'], ['fonte', 'fonte'],
+    ['freq', 'frequência'], ['pol', 'polaridade'], ['resp', 'responsável'], ['base', 'linha de base'], ['meta', 'meta'], ['prazo', 'prazo']];
+  var CAMPOS_FAROL = [['mp', 'meta do período'], ['am', '% do amarelo'], ['vm', '% do vermelho'], ['gam', 'gatilho do amarelo'], ['gvm', 'gatilho do vermelho']];
+  function existeIndicador(c, i, j) {
+    var p = 'f5a_o' + i + '_i' + j + '_', b = 'f5b_o' + i + '_i' + j + '_';
+    return CAMPOS_IND.some(function (x) { return c[p + x[0]] === true || tem(c, p + x[0]); }) || CAMPOS_FAROL.some(function (x) { return tem(c, b + x[0]); });
+  }
+  function indicador(c, i, j) {
+    var p = 'f5a_o' + i + '_i' + j + '_', b = 'f5b_o' + i + '_i' + j + '_';
+    var x = { obj: i, j: j, ref: i + '.' + j, vaid: c[p + 'vaid'] === true };
+    CAMPOS_IND.forEach(function (k) { if (k[0] !== 'vaid') x[k[0]] = String(c[p + k[0]] || '').trim(); });
+    x.metaPeriodo = c[b + 'mp'] || ''; x.gatAm = c[b + 'gam'] || ''; x.gatVerm = c[b + 'gvm'] || '';
+    x.faixas = faixas(c, i, j);
+    x.falta = CAMPOS_IND.filter(function (k) { return k[0] === 'vaid' ? !x.vaid : !x[k[0]]; }).map(function (k) { return k[1]; })
+      .concat(CAMPOS_FAROL.filter(function (k) { return !tem(c, b + k[0]); }).map(function (k) { return k[1]; }));
+    x.essencial = !!(x.nome && x.tipo && x.base && x.meta && x.prazo);
+    x.farol = !!(x.faixas && !x.faixas.erro && x.gatAm && x.gatVerm);
+    x.ok = !x.falta.length && x.farol;
+    return x;
+  }
+  /* indicadores dos objetivos escritos (de um objetivo só, se "n" for dado) */
+  function indicadores(c, n) {
+    var out = [];
+    objetivosBase(c).forEach(function (o) {
+      if (n && o.n !== n) return;
+      seq(N_IND).forEach(function (j) { if (existeIndicador(c, o.n, j)) out.push(indicador(c, o.n, j)); });
+    });
+    return out;
+  }
+  /* nome legível de uma referência "3.2" (ou do texto livre das versões antigas da Folha 6) */
+  function nomeIndicador(c, v) {
+    var m = /^(\d+)\.(\d)$/.exec(String(v || ''));
+    if (!m) return String(v || '');
+    return c['f5a_o' + m[1] + '_i' + m[2] + '_nome'] || 'Indicador ' + v;
+  }
+  function objetivosBase(c) {
     return seq(N_OBJ).map(function (i) {
       var p = 'f5a_o' + i + '_';
-      return { n: i, texto: c[p + 'obj'] || '', tipo: c[p + 'tipo'] || '', garg: !!c[p + 'garg'], ind: c[p + 'ind'] || '', ind2: c[p + 'ind2'] || '',
-        base: c[p + 'base'] || '', meta: c[p + 'meta'] || '', prazo: c[p + 'prazo'] || '',
+      return { n: i, texto: c[p + 'obj'] || '', tipo: c[p + 'tipo'] || '', garg: !!c[p + 'garg'],
         persp: c['f7_o' + i + '_persp'] || '', leva: numeros(c['f7_o' + i + '_leva']), just: c['f7_o' + i + '_just'] || '' };
     }).filter(function (o) { return o.texto; });
+  }
+  function objetivos(c) {
+    return objetivosBase(c).map(function (o) { o.inds = indicadores(c, o.n); return o; });
   }
   function numeros(v) {
     var out = [];
@@ -661,26 +673,18 @@
   function acoes(c) {
     return seq(N_ACOES).map(function (i) {
       var p = 'f6_a' + i + '_';
-      return { n: i, obj: Number(c[p + 'obj']) || 0, acao: c[p + 'acao'] || '', ind: c[p + 'ind'] || '', alav: c[p + 'alav'] || '',
+      return { n: i, obj: Number(c[p + 'obj']) || 0, acao: c[p + 'acao'] || '', ind: c[p + 'ind'] || '', indNome: nomeIndicador(c, c[p + 'ind']), alav: c[p + 'alav'] || '',
         imp: c[p + 'imp'] || '', esf: c[p + 'esf'] || '', prio: prioridade(c[p + 'imp'], c[p + 'esf']),
         resp: c[p + 'resp'] || '', prazo: c[p + 'prazo'] || '', custo: c[p + 'custo'] || '' };
     }).filter(function (a) { return a.acao; });
   }
-  function fichas(c) {
-    return seq(N_FICHAS).map(function (n) {
-      var p = 'f5a_fc' + n + '_', b = 'f5b_p' + n + '_';
-      return { n: n, obj: Number(c[p + 'obj']) || 0, nome: c[p + 'nome'] || '', formula: c[p + 'formula'] || '', unidade: c[p + 'unidade'] || '',
-        fonte: c[p + 'fonte'] || '', freq: c[p + 'freq'] || '', pol: c[p + 'pol'] || '', base: c[p + 'base'] || '', meta: c[p + 'meta'] || '', resp: c[p + 'resp'] || '',
-        metaPeriodo: c[b + 'meta'] || '', faixas: faixas(c, n), gatAm: c[b + 'gat_am'] || '', gatVerm: c[b + 'gat_verm'] || '' };
-    }).filter(function (f) { return f.nome || f.obj; });
-  }
 
   window.WS_F = {
     GUIAS: GUIAS, MATRIZ: MATRIZ, ESTAGIOS: ESTAGIOS, PERSPECTIVAS: PERSPECTIVAS, ANSOFF: ANSOFF,
-    N_OBJ: N_OBJ, N_ACOES: N_ACOES, N_FICHAS: N_FICHAS, N_FICHAS_ABERTAS: N_FICHAS_ABERTAS,
+    N_OBJ: N_OBJ, N_IND: N_IND, N_ACOES: N_ACOES,
     PAGINAS: { abertura: ABERTURA, bloco1: BLOCO1, bloco2: BLOCO2, bloco3: BLOCO3, bloco4: BLOCO4, bloco5: BLOCO5, fechamento: FECHAMENTO, bloco6: BLOCO6 },
     ORDEM: ['abertura', 'bloco1', 'bloco2', 'bloco3', 'bloco4', 'bloco5', 'fechamento', 'bloco6'],
     numBR: numBR, fmtNum: fmtNum, faixas: faixas, cor: cor, prioridade: prioridade,
-    objetivos: objetivos, acoes: acoes, fichas: fichas, numeros: numeros, seq: seq
+    objetivos: objetivos, indicadores: indicadores, nomeIndicador: nomeIndicador, acoes: acoes, numeros: numeros, seq: seq
   };
 })();

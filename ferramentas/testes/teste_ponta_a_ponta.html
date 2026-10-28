@@ -78,7 +78,7 @@ const salvo = async (w) => { w.WS_PAGINA.salvarAgora(); await sleep(100); return
     digitar(w, 'f0_fut_reconhecidos', 'parceira das cooperativas'); digitar(w, 'f0_fut_numero', 'R$ 6 milhões');
     await sleep(200);
     ok(auto0.classList.contains('ok') && q(w, '#progGeral').textContent.includes('lista final: 2 de 3'), 'lista final: o caderno confere "frase 2 com número" sozinho');
-    ok(q(w, '#s-hoje .e-alimenta').textContent.includes('passo 2 de 4') && q(w, '.proximo a[href*="bloco1.html"]'), 'cabeçalho "passo X de N" e cartão com a próxima folha');
+    ok(q(w, '#s-hoje .e-alimenta').textContent.includes('passo 2 de 3') && q(w, '.proximo a[href*="bloco1.html"]'), 'cabeçalho "passo X de N" e cartão com a próxima folha');
 
     /* ---- Folhas 1 e 2 ---- */
     w = await carregar('/folhas/bloco1.html');
@@ -120,49 +120,82 @@ const salvo = async (w) => { w.WS_PAGINA.salvarAgora(); await sleep(100); return
     /* ---- Folhas 5A e 5B ---- */
     w = await carregar('/folhas/bloco4.html');
     ok(q(w, '.esp-direcoes').textContent.includes('Criar pacote financiável') && q(w, '.esp-direcoes').textContent.includes('Gargalo: Operação'), '5A: direções das folhas anteriores reunidas (com o gargalo)');
+    ok(w.document.querySelectorAll('.e-trilha a').length === 8 && q(w, '.e-trilha a[aria-current]').dataset.trilha === 'bloco4' && q(w, '.e-trilha a[data-trilha="abertura"]').className === 'andamento',
+      'trilha das 8 etapas no topo da folha, com a atual marcada e o estado das outras');
+    ok(q(w, '#s-objetivos .sec-seguir[href="#s-indicadores"]') && q(w, '#s-indicadores .sec-seguir[href="#s-pronta"]'), 'fim de cada passo: botão para o passo seguinte');
     const visiveis = () => Array.from(w.document.querySelectorAll('#s-objetivos tbody tr')).filter(t => !t.hidden).length;
-    ok(visiveis() === 6, 'tabela de objetivos começa com 6 linhas (não 10)');
+    ok(visiveis() === 6 && !k(w, 'f5a_o1_ind') && k(w, 'f5a_o1_garg'), 'passo 1 só com objetivo, tipo e gargalo; começa com 6 linhas (não 10)');
     digitar(w, 'f5a_o6_obj', 'Sexto'); await sleep(100);
     ok(visiveis() === 7, 'ao preencher a última linha, a seguinte aparece');
     digitar(w, 'f5a_o6_obj', ''); await sleep(100);
     q(w, '#s-objetivos [data-mais-linha]').click(); await sleep(100);
     ok(visiveis() === 7 && w.document.activeElement === k(w, 'f5a_o7_obj'), '"Mais uma linha" abre a linha seguinte e põe o cursor nela');
-    digitar(w, 'f5a_o1_obj', 'Aumentar receita recorrente'); digitar(w, 'f5a_o1_tipo', 'POS'); digitar(w, 'f5a_o1_ind', '% recorrente');
+    q(w, '.esp-direcoes [data-usar]').click(); await sleep(200);
+    ok(k(w, 'f5a_o1_obj').value === 'Criar pacote financiável' && q(w, '.esp-direcoes').textContent.includes('✓ objetivo 1'), '"＋" leva a direção para a primeira linha livre e marca a direção como usada');
+    digitar(w, 'f5a_o1_obj', 'Aumentar receita recorrente'); digitar(w, 'f5a_o1_tipo', 'POS');
     digitar(w, 'f5a_o2_obj', 'Reduzir implantação ' + XSS); digitar(w, 'f5a_o2_tipo', 'EO'); marcar(w, 'f5a_o2_garg');
     await sleep(300);
-    const opts = Array.from(k(w, 'f5a_fc1_obj').options).map(o => o.textContent);
-    ok(opts.length === 3 && opts[1].startsWith('1 · Aumentar'), 'fichas: lista de objetivos vem da tabela da 5A');
     ok(q(w, '.esp-validador').textContent.includes('hoje: 2') && q(w, '.esp-validador .chk-auto.alerta'), 'validador: conta objetivos e aponta o que falta');
-    digitar(w, 'f5a_fc1_obj', '1'); digitar(w, 'f5a_fc1_nome', 'MRR'); digitar(w, 'f5a_fc1_unidade', 'R$'); digitar(w, 'f5a_fc1_pol', 'Quanto maior, melhor');
-    digitar(w, 'f5b_p1_meta', '60.000'); digitar(w, 'f5b_p1_tol', '15'); digitar(w, 'f5b_p1_sim', '49 mil');
+    const abas = () => Array.from(w.document.querySelectorAll('.objs-nav .obj-aba'));
+    const cartao = n => q(w, '.obj-card[data-obj="' + n + '"]');
+    ok(abas().length === 2 && !cartao(1).hidden && cartao(2).hidden && cartao(1).textContent.includes('Aumentar receita recorrente'), 'passo 2: uma aba por objetivo escrito, com o primeiro aberto');
+    ok(!cartao(1).querySelectorAll('.prog-item')[0].hidden && cartao(1).querySelectorAll('.prog-item')[1].hidden, 'cada objetivo começa com 1 indicador visível');
+    cartao(1).querySelector('[data-mais-item]').click(); await sleep(150);
+    ok(!cartao(1).querySelectorAll('.prog-item')[1].hidden && w.document.activeElement === k(w, 'f5a_o1_i2_nome'), '"Acrescentar outro indicador" abre o indicador 2 e põe o cursor nele');
+    ok(cartao(1).querySelectorAll('.prog-item').length === 3, 'até 3 indicadores por objetivo');
+    digitar(w, 'f5a_o1_i1_nome', 'MRR'); digitar(w, 'f5a_o1_i1_unidade', 'R$'); digitar(w, 'f5a_o1_i1_pol', 'Quanto maior, melhor');
+    digitar(w, 'f5b_o1_i1_mp', '60.000'); digitar(w, 'f5b_o1_i1_am', '0'); digitar(w, 'f5b_o1_i1_vm', '15');
     await sleep(300);
-    const farol = q(w, '.esp-farol').textContent;
-    ok(farol.includes('R$ 60.000') && farol.includes('R$ 51.000') && q(w, '.farol-sim.fx-vermelho'), 'farol: faixas-padrão calculadas (R$ 60.000 / R$ 51.000) e simulação 49 mil = vermelho');
-    digitar(w, 'f5a_fc2_obj', '2'); digitar(w, 'f5a_fc2_nome', 'Dias'); digitar(w, 'f5a_fc2_pol', 'Quanto menor, melhor'); digitar(w, 'f5b_p2_meta', '14');
+    const fx1 = q(w, '.esp-faixas[data-n="1.1"]').textContent;
+    ok(fx1.includes('≥ R$ 60.000') && fx1.includes('< R$ 51.000'), 'farol: faixas com os % escolhidos pela empresa (amarelo 0%, vermelho 15%)');
+    digitar(w, 'f5b_o1_i1_am', '5'); await sleep(200);
+    ok(q(w, '.esp-faixas[data-n="1.1"]').textContent.includes('≥ R$ 57.000'), 'farol: mudar o % do amarelo muda a faixa verde');
+    digitar(w, 'f5b_o1_i1_vm', '3'); await sleep(200);
+    ok(q(w, '.esp-faixas[data-n="1.1"] .chk-auto.alerta'), 'farol: avisa quando o vermelho começa antes do amarelo');
+    digitar(w, 'f5b_o1_i1_am', '0'); digitar(w, 'f5b_o1_i1_vm', '15'); await sleep(200);
+    ok(q(w, '.esp-indEstado[data-n="1.1"]').textContent.includes('teste da vaidade') && q(w, '.esp-indEstado[data-n="1.1"]').textContent.includes('gatilho do vermelho'), 'cada indicador mostra o que falta (inclusive o teste da vaidade)');
+    marcar(w, 'f5a_o1_i1_vaid'); await sleep(150);
+    ok(!q(w, '.esp-indEstado[data-n="1.1"]').textContent.includes('teste da vaidade'), 'teste da vaidade marcado no próprio indicador');
+    abas()[1].click(); await sleep(200);
+    ok(cartao(1).hidden && !cartao(2).hidden && abas()[1].classList.contains('ativa'), 'clicar na aba troca o objetivo visível');
+    digitar(w, 'f5a_o2_i1_nome', 'Dias'); digitar(w, 'f5a_o2_i1_pol', 'Quanto menor, melhor'); digitar(w, 'f5b_o2_i1_mp', '14'); digitar(w, 'f5b_o2_i1_am', '0'); digitar(w, 'f5b_o2_i1_vm', '15');
     await sleep(300);
-    ok(q(w, '.esp-simulacao').textContent.includes('20% acima') && q(w, '.esp-simulacao').textContent.includes('16,8'), 'simulação de 20%: "menor, melhor" vira 20% acima (16,8)');
+    ok(q(w, '.esp-faixas[data-n="2.1"]').textContent.includes('> 16,1'), 'farol "quanto menor, melhor": vermelho acima de 15% da meta (16,1)');
+    ok(cartao(2).querySelector('[data-obj-ir="-1"]') && !cartao(2).querySelector('[data-obj-ir="-1"]').hidden, 'no segundo objetivo há o botão "objetivo anterior"');
+    cartao(2).querySelector('[data-obj-ir="-1"]').click(); await sleep(200);
+    ok(!cartao(1).hidden, '"Objetivo anterior" volta ao objetivo 1');
+    const painel = q(w, '.esp-painel').textContent;
+    ok(painel.includes('MRR') && painel.includes('Dias') && painel.includes('< R$ 51.000'), 'painel de controle (5B) montado com os indicadores de todos os objetivos');
+    q(w, '.esp-painel [data-obj-sel="2"]').click(); await sleep(200);
+    ok(!cartao(2).hidden, 'no painel, o número do indicador abre o objetivo dele');
     ok(semXss(w), 'Folhas 5A e 5B: nenhum HTML injetado');
+    const pend = q(w, '#s-pronta .chk-conferido:not(.ok) .chk-ir');
+    ok(pend && /^#s-(objetivos|indicadores)$/.test(pend.getAttribute('href')), 'lista final: item pendente leva ao passo onde se resolve');
     c = await salvo(w);
-    ok(c.f5b_p1_verde === '≥ R$ 60.000' && c.f5b_p1_vermelho === '< R$ 51.000', 'faixas calculadas vão para o caderno');
-    ok(!('f5b_p3_verde' in c), 'painel sem meta não grava faixas vazias');
-
+    ok(c.f5b_o1_i1_mp === '60.000' && c.f5a_o1_i1_vaid === true && c.f5a_o2_garg === true && !('f5b_o1_i1_verde' in c), 'indicadores, teste da vaidade e farol vão para o caderno (sem campos calculados)');
+    digitar(w, 'f5a_o1_i2_nome', 'Provisório'); await sleep(100);
+    cartao(1).querySelectorAll('[data-limpar]')[1].click(); await sleep(200);
+    ok(k(w, 'f5a_o1_i2_nome').value === '' && cartao(1).querySelectorAll('.prog-item')[1].hidden, '"Limpar indicador" esvazia o indicador e o recolhe');
     /* ---- Folha 6 ---- */
     w = await carregar('/folhas/bloco5.html');
-    digitar(w, 'f6_a1_obj', '1'); digitar(w, 'f6_a1_acao', 'Plano anual ' + XSS); digitar(w, 'f6_a1_imp', 'A'); digitar(w, 'f6_a1_esf', 'B');
+    digitar(w, 'f6_a1_obj', '1'); await sleep(200);
+    const opInd = Array.from(k(w, 'f6_a1_ind').options).map(o => o.value + '=' + o.textContent);
+    ok(opInd.join('|') === '=—|1.1=MRR', 'ação: o indicador que ela move vem da lista de indicadores do objetivo escolhido' + (opInd.join('|') === '=—|1.1=MRR' ? '' : ' [' + opInd.join('|') + ']'));
+    digitar(w, 'f6_a1_ind', '1.1'); digitar(w, 'f6_a1_acao', 'Plano anual ' + XSS); digitar(w, 'f6_a1_imp', 'A'); digitar(w, 'f6_a1_esf', 'B');
     await sleep(300);
     ok(k(w, 'f6_a1_prio').value === 'Fazer já' && q(w, '.q2-prio .q-a').textContent.includes('Plano anual'), 'ações: prioridade calculada e matriz impacto × esforço');
     ok(!q(w, 'tr[data-se]').hidden && q(w, 'tr[data-se]:nth-of-type(2)').hidden, 'detalhamento: só aparecem as linhas das ações escritas');
     ok(q(w, '.esp-priorizacao').textContent.includes('sem ação: 2'), 'conferência: objetivo sem ação apontado');
     ok(semXss(w), 'Folha 6: nenhum HTML injetado');
     c = await salvo(w);
-    ok(c.f6_a1_prio === 'Fazer já' && c.f5a_o1_obj && c.f5b_p1_verde, 'Folha 6 salva sem apagar as Folhas 5A e 5B');
+    ok(c.f6_a1_prio === 'Fazer já' && c.f6_a1_ind === '1.1' && c.f5a_o1_obj && c.f5b_o1_i1_mp, 'Folha 6 salva sem apagar as Folhas 5A e 5B');
 
     /* ---- Fechamento ---- */
     w = await carregar('/folhas/fechamento.html');
     digitar(w, 'fc_obj', '1'); await sleep(300);
     const cad = q(w, '.esp-cadeia').textContent;
-    ok(cad.includes('Aumentar receita recorrente') && cad.includes('Plano anual') && q(w, '.elo.quebra'), 'leitura da cadeia: monta a cadeia do objetivo e mostra onde quebra');
-    ok(q(w, '.esp-pendencias').textContent.includes('Fichas de indicador'), 'tarefa: lista o que ainda falta');
+    ok(cad.includes('Aumentar receita recorrente') && cad.includes('MRR') && cad.includes('R$ 51.000') && cad.includes('Plano anual') && q(w, '.elo.quebra'), 'leitura da cadeia: monta a cadeia do objetivo (indicador, farol, ação) e mostra onde quebra');
+    ok(q(w, '.esp-pendencias').textContent.includes('falta completar 1.1, 2.1') && q(w, '.esp-pendencias a[href*="bloco4.html#s-indicadores"]'), 'tarefa: lista os indicadores incompletos, com link para a Folha 5');
 
     /* ---- Folha 7 ---- */
     w = await carregar('/folhas/bloco6.html');
@@ -180,8 +213,8 @@ const salvo = async (w) => { w.WS_PAGINA.salvarAgora(); await sleep(100); return
     w = await carregar('/folhas/bloco4.html');
     w.dispatchEvent(new w.Event('beforeprint')); await sleep(200);
     const rel = q(w, '#relatorio');
-    ok(rel.parentNode === w.document.body && rel.textContent.includes('Aumentar receita recorrente') && rel.textContent.includes('R$ 51.000'), 'PDF da folha: respostas e faixas do farol');
-    ok(!rel.textContent.includes('Sua folha está pronta') && !rel.textContent.includes('Simulador') && !rel.textContent.includes('Mão na massa'), 'PDF da folha: sem lista final, simulador nem orientações');
+    ok(rel.parentNode === w.document.body && rel.textContent.includes('Aumentar receita recorrente') && rel.textContent.includes('1.1 · MRR') && rel.textContent.includes('R$ 51.000'), 'PDF da folha: objetivos, indicadores e faixas do farol');
+    ok(!rel.textContent.includes('prontas quando') && !rel.textContent.includes('Falta:') && !rel.textContent.includes('Mão na massa') && !rel.textContent.includes('Seguir para'), 'PDF da folha: sem lista final nem orientações');
     ok(semXss(w), 'PDF: nenhum HTML injetado');
 
     /* ---- arquivo: salvar ---- */
@@ -231,6 +264,8 @@ const salvo = async (w) => { w.WS_PAGINA.salvarAgora(); await sleep(100); return
     ok(w.WS_M.criterios(w.WS_M.completar(w.WS_EXEMPLO.campos)).every(x => x[0]), 'critérios de prontidão do exemplo: todos verdes');
     const naoProntas = w.WS_F.ORDEM.filter(id => w.WS_M.status(id, w.WS_EXEMPLO.campos).estado !== 'pronta');
     ok(!naoProntas.length, 'AgroSense: as 8 etapas ficam "prontas" (listas finais completas)' + (naoProntas.length ? ' — faltam: ' + naoProntas.join(', ') : ''));
+    w = await carregar('/folhas/bloco4.html?exemplo');
+    ok(w.document.querySelectorAll('.objs-nav .obj-aba.ok').length === 7 && q(w, '.esp-painel').textContent.includes('9 de 9 indicadores completos'), 'Folha 5 da AgroSense: 7 objetivos com 9 indicadores completos');
     w = await carregar('/folhas/bloco3.html?exemplo');
     ok(q(w, '.proximo a[href*="bloco4.html?exemplo"]') && q(w, '.e-rodape a[href*="bloco2.html?exemplo"]'), 'modo exemplo: a navegação entre folhas continua no exemplo');
 

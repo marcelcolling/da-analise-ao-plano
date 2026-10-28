@@ -247,9 +247,8 @@ details.ex[open] > summary { border-bottom: 1px dashed var(--az-linha); }
 .caixa textarea, .caixa input, .caixa select { background: #fff; }
 .quad { border-top: 5px solid var(--az); }
 .quad-fo { border-top-color: #2f8f5f; } .quad-fa { border-top-color: #2a78d6; } .quad-wo { border-top-color: #EFB93C; } .quad-wa { border-top-color: #b0475a; }
-.painel { border-left: 5px solid var(--az); }
 
-/* blocos recolhíveis (fichas 4 a 10) */
+/* blocos recolhíveis */
 details.mais { border: 1px solid var(--az-linha); border-radius: 14px; margin: 1rem 0; background: #fff; }
 details.mais > summary { cursor: pointer; padding: 0.75rem 1rem; font-weight: 600; color: var(--az); font-size: 0.92rem; }
 .mais-corpo { padding: 0 1rem 0.4rem; }
@@ -344,10 +343,6 @@ ul.se-entao li { font-size: 0.92rem; margin-bottom: 0.3rem; }
 .fx { border-radius: 10px; padding: 0.5rem 0.7rem; font-size: 0.86rem; }
 .fx b { display: block; font-size: 0.74rem; letter-spacing: 0.04em; text-transform: uppercase; }
 .fx-verde { background: rgba(47,143,95,0.14); } .fx-amarelo { background: rgba(239,185,60,0.24); } .fx-vermelho { background: rgba(176,71,90,0.14); }
-.farol-sim { border-radius: 12px; padding: 0.65rem 0.85rem; margin: 0 0 0.8rem; display: grid; gap: 0.2rem; font-size: 0.88rem; }
-.sim-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
-.sim-lista li { border-radius: 10px; padding: 0.55rem 0.8rem; font-size: 0.9rem; }
-.sim-lista li span { color: var(--ard); font-size: 0.85rem; }
 
 ul.chk-auto-lista { list-style: none; margin: 0.4rem 0 0.8rem; padding: 0; display: grid; gap: 0.35rem; }
 .chk-auto { display: flex; gap: 0.55rem; align-items: flex-start; font-size: 0.9rem; border-radius: 10px; padding: 0.45rem 0.75rem; }
@@ -519,3 +514,100 @@ textarea.linha { min-height: 44px; resize: none; overflow: hidden; }
   .plano-doc .r-capa .r-capa-tit { font-size: 1.5rem; }
 }
 @media print { .r-tab-wrap { overflow: visible; } }
+
+/* =========================================================
+   Navegação e Folha 5 por objetivo (revisão de 28/10/2026)
+   ========================================================= */
+/* trilha das 8 etapas no topo de cada folha */
+.e-trilha { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin: 0 0 1rem; }
+.e-trilha-rot { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-right: 0.35rem; }
+.e-trilha a { font-size: 0.72rem; font-weight: 700; text-decoration: none; color: rgba(255,255,255,0.78); border: 1px solid rgba(255,255,255,0.22); border-radius: 8px; padding: 0.18rem 0.5rem; background: rgba(255,255,255,0.05); }
+.e-trilha a:hover { border-color: var(--am); color: #fff; }
+.e-trilha a.andamento { background: linear-gradient(to top, rgba(239,185,60,0.45) 50%, rgba(255,255,255,0.05) 50%); color: #fff; }
+.e-trilha a.pronta { background: #2f8f5f; border-color: #2f8f5f; color: #fff; }
+.e-trilha a.pronta::after { content: ' ✓'; }
+.e-trilha a[aria-current] { outline: 2px solid var(--am); outline-offset: 1px; color: #fff; }
+.e-trilha a:focus-visible { outline: 3px solid var(--am); outline-offset: 2px; }
+
+/* fim de cada passo: seguir para o próximo */
+.sec-seguir, .seguir-dentro { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 1rem; font-size: 0.88rem; font-weight: 600; color: var(--az); text-decoration: none; border: 1px solid var(--az-linha); background: var(--az-tint); border-radius: 100px; padding: 0.5rem 1rem; }
+.sec-seguir:hover, .seguir-dentro:hover { background: var(--az); color: #fff; }
+.seguir-dentro { margin-top: 0.2rem; }
+.chk-ir { font-size: 0.8rem; font-weight: 600; margin-left: 0.3rem; white-space: nowrap; }
+.chk-conferido.ok .chk-ir { display: none; }
+
+/* caixas com cabeçalho e botão "Limpar" */
+.caixa-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem 1rem; flex-wrap: wrap; }
+.btn-limpar { font-family: var(--body); font-size: 0.76rem; font-weight: 600; color: var(--muted); background: none; border: 1px solid transparent; border-radius: 8px; padding: 0.2rem 0.5rem; cursor: pointer; }
+.btn-limpar:hover { color: var(--alerta); border-color: rgba(176,71,90,0.35); }
+
+/* direções que viram objetivos com um clique */
+.dir-usar { font-family: var(--body); font-size: 0.85rem; font-weight: 700; line-height: 1; width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 1px solid var(--az); background: #fff; color: var(--az); cursor: pointer; margin-left: 0.2rem; vertical-align: 0.05rem; }
+.dir-usar:hover, .dir-usar:focus-visible { background: var(--az); color: #fff; outline: none; }
+.dir-usada { font-size: 0.74rem; font-weight: 600; color: var(--ok); white-space: nowrap; }
+
+/* passo 2 da Folha 5: abas dos objetivos */
+.objs { scroll-margin-top: 120px; }
+.objs-nav { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0.5rem; margin: 0 0 1rem; }
+.obj-aba { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 0.55rem; align-items: center; text-align: left; font-family: var(--body); cursor: pointer;
+  background: #fff; border: 1px solid var(--az-linha); border-left: 5px solid #b9c1cd; border-radius: 12px; padding: 0.5rem 0.7rem; color: var(--tx); }
+.obj-aba b { grid-row: span 2; font-family: var(--display); font-size: 1.15rem; color: var(--az); }
+.obj-aba-txt { font-size: 0.82rem; font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.obj-aba small { font-size: 0.72rem; color: var(--muted); }
+.obj-aba.andamento { border-left-color: var(--am); }
+.obj-aba.ok { border-left-color: var(--ok); }
+.obj-aba.ok small { color: var(--ok); font-weight: 600; }
+.obj-aba:hover { border-color: var(--az); }
+.obj-aba.ativa { background: var(--az); border-color: var(--az); color: #fff; }
+.obj-aba.ativa b { color: var(--am); }
+.obj-aba.ativa small { color: rgba(255,255,255,0.8); }
+.obj-aba:focus-visible { outline: 3px solid var(--am); outline-offset: 2px; }
+.obj-card { border: 2px solid var(--az); border-radius: 18px; padding: 1rem 1.1rem 0.6rem; background: #fff; }
+.obj-cab { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+.obj-n { flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; background: var(--az); color: var(--am); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; font-size: 1.2rem; }
+.obj-cab-txt { flex: 1; min-width: 12rem; }
+.obj-rot { display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--am-ink); }
+.obj-cab-txt strong { font-family: var(--display); font-weight: 600; font-size: 1.15rem; color: var(--az); line-height: 1.25; }
+.obj-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.obj-tag { font-size: 0.72rem; font-weight: 700; border-radius: 100px; padding: 0.15rem 0.6rem; }
+.obj-tag.pos { background: #FCE9B6; color: var(--am-ink); } .obj-tag.eo { background: #E3E8F0; color: var(--ard); }
+.obj-tag.garg { background: #b0475a; color: #fff; } .obj-tag.sem { background: rgba(176,71,90,0.08); color: #8e3647; }
+.obj-pe { display: flex; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; margin: 0.4rem 0 0.5rem; }
+.obj-pe [data-obj-ir="1"] { margin-left: auto; }
+.obj-pe .vd-btn { padding: 0.6rem 1rem; font-size: 0.86rem; }
+.obj-pe .vd-btn[hidden] { display: none; }
+
+/* indicadores dentro do objetivo */
+.prog-item[hidden], .obj-card[hidden], .objs-nav[hidden], .objs-vazio[hidden], .btn-prog[hidden] { display: none !important; }
+.btn-prog { border: 1px dashed var(--az); border-radius: 12px; margin: 0 0 0.9rem; }
+.caixa.ind { background: var(--papel-alt); border-left: 5px solid var(--az); padding-bottom: 0.4rem; }
+.caixa.ind h3.sub { font-family: var(--body); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--am-ink); margin: 0.6rem 0 0.4rem; padding-top: 0.7rem; border-top: 1px dashed var(--az-linha); }
+.caixa.ind .campo { margin-bottom: 0.8rem; }
+.caixa.ind .campo-check .chk-cel { justify-content: flex-start; padding-top: 0.2rem; }
+.ind-estado { margin: 0.1rem 0 0.6rem; font-size: 0.84rem; color: #8e3647; background: rgba(176,71,90,0.06); border-radius: 8px; padding: 0.35rem 0.65rem; }
+.ind-estado.ok { color: var(--ok); background: rgba(47,143,95,0.1); font-weight: 600; }
+.esp-faixas { margin-bottom: 0.6rem; }
+
+/* painel de controle (5B) montado com os indicadores */
+.painel-tab { width: 100%; border-collapse: collapse; font-size: 0.86rem; background: #fff; border: 1px solid var(--az-linha); }
+.painel-tab th { background: var(--az); color: #fff; text-align: left; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.5rem 0.55rem; }
+.painel-tab td { border-top: 1px solid var(--az-linha); padding: 0.45rem 0.55rem; vertical-align: top; }
+.painel-tab td small { color: var(--muted); }
+.painel-ir { font-family: var(--body); font-weight: 700; font-size: 0.8rem; border: 1px solid var(--az); color: var(--az); background: #fff; border-radius: 8px; padding: 0.15rem 0.45rem; cursor: pointer; white-space: nowrap; }
+.painel-ir:hover { background: var(--az); color: #fff; }
+.painel-sem { color: var(--muted); font-style: italic; }
+.painel-ok { color: var(--ok); font-weight: 600; white-space: nowrap; }
+.painel-pend { color: #8e3647; white-space: nowrap; }
+.painel-falta td { background: rgba(176,71,90,0.05); }
+
+@media (max-width: 760px) {
+  .objs-nav { grid-template-columns: 1fr 1fr; }
+  .obj-card { padding: 0.8rem 0.7rem 0.4rem; border-radius: 14px; }
+  .caixa.ind { padding: 0.8rem 0.75rem 0.3rem; }
+  .obj-pe .vd-btn { flex: 1 1 100%; }
+  .painel-tab { min-width: 620px; }
+}
+/* campos de uma mesma linha da ficha: a caixa de digitação fica alinhada embaixo, mesmo quando o rótulo quebra */
+.caixa.ind .grade > .campo > label { display: flex; flex-direction: column; height: 100%; }
+.caixa.ind .grade > .campo > label > :last-child { margin-top: auto; }
+.caixa.ind .grade > .campo-check > label > :last-child { margin-top: 0.3rem; }

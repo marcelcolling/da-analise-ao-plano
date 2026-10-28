@@ -125,17 +125,17 @@ Pergunte "por quê?" até chegar a uma causa sobre a qual você consegue agir.
 
 **Folha 5A — Objetivos e indicadores**
 1. Reúna as direções das Folhas 2, 3A, 3B e 4.
-2. Redija de **6 a 10 objetivos** (verbo + objeto + qualificador) e marque EO ou POS.
-3. Para cada objetivo, defina **1 indicador** (até 2, se um deles for de tendência).
-4. Preencha linha de base, meta e prazo. Sem linha de base, escreva "a levantar".
-5. Faça a **ficha completa** de pelo menos 3 indicadores.
+2. Redija de **6 a 10 objetivos** (verbo + objeto + qualificador), marque EO ou POS e indique os que atacam o gargalo.
+3. Para cada objetivo, desenvolva **de 1 a 3 indicadores** (combine resultado e tendência) e aplique a cada um o **teste da vaidade**.
+4. Preencha a ficha de cada indicador, com linha de base, meta e prazo. Sem linha de base, escreva "a levantar".
+5. Na Aula 1, complete pelo menos 3 indicadores; os demais ficam como tarefa para a Aula 2.
 
-**Folha 5B — Painel de controle**
-1. Para os 3 indicadores com ficha, defina a **meta do próximo período**.
-2. Calcule as faixas de verde, amarelo e vermelho.
+**Folha 5B — Painel de controle** (na ficha de cada indicador)
+1. Defina a **meta do próximo período**.
+2. Decida a partir de quantos % pior que a meta o farol fica **amarelo** e a partir de quantos fica **vermelho** (as faixas-padrão são uma referência). As faixas se calculam sozinhas.
 3. Escreva o **gatilho do amarelo:** quem analisa e qual a primeira verificação.
 4. Escreva o **gatilho do vermelho:** quem é acionado e em quanto tempo sai o plano corretivo.
-5. **Simule:** "meu indicador ficou 20% abaixo da meta". Você sabe dizer a cor, quem age e o que acontece até quando? Se não, complete a folha.
+5. Confira o painel: todos os indicadores, com as faixas e o que falta em cada um.
 
 ---
 
@@ -181,7 +181,7 @@ Pergunte "por quê?" até chegar a uma causa sobre a qual você consegue agir.
 | "Responsável: equipe comercial" | Responsável é **uma pessoa** |
 | Faixas definidas depois da medição | Defina agora, na Folha 5B |
 | Indicador que ninguém consegue medir | Se não existe fonte de dado, ou cria-se a fonte, ou troca-se o indicador |
-| 20 indicadores | Um por objetivo, no máximo dois. Painel cheio é painel ignorado. |
+| 20 indicadores | No máximo três por objetivo, e só os que passam no teste da vaidade. Painel cheio é painel ignorado. |
 
 ---
 
@@ -213,11 +213,10 @@ Ou as metas são irreais, ou a execução não está acontecendo. Use a Regra 5 
 ## Suas folhas estão prontas quando…
 
 - [ ] Há de 6 a 10 objetivos, com pelo menos 2 de POS e 1 de EO no gargalo.
-- [ ] Cada objetivo tem indicador, linha de base (ou "a levantar"), meta e prazo.
-- [ ] Pelo menos 3 indicadores têm ficha completa.
-- [ ] Nenhum indicador falha no teste da vaidade.
-- [ ] Os 3 indicadores principais têm faixas de farol e gatilhos de amarelo e vermelho.
-- [ ] Você consegue responder à simulação: cor, quem age, o que acontece e até quando.
+- [ ] Cada objetivo está redigido como verbo de resultado + objeto + qualificador.
+- [ ] Cada objetivo tem de 1 a 3 indicadores, todos aprovados no teste da vaidade.
+- [ ] Cada indicador tem nome, tipo, linha de base (ou "a levantar"), meta e prazo.
+- [ ] Pelo menos 3 indicadores estão completos: ficha, faixas de farol e gatilhos de amarelo e vermelho.
 
 ---
 

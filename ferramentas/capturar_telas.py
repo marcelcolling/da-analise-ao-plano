@@ -42,8 +42,8 @@ CAPTURAS = [
     ("f4-bcg", "/folhas/bloco3.html", "s-bcg", 1366, 1400),
     ("f4-ansoff", "/folhas/bloco3.html", "s-ansoff", 1366, 1100),
     ("f5a-obj", "/folhas/bloco4.html", "s-objetivos", 1366, 1600),
-    ("f5b-painel", "/folhas/bloco4.html", "s-painel", 1366, 1500),
-    ("f5b-sim", "/folhas/bloco4.html", "s-simulacao", 1366, 1000),
+    ("f5-indicadores", "/folhas/bloco4.html", "s-indicadores", 1366, 2400),
+    ("f5-painel", "/folhas/bloco4.html", "s-pronta", 1366, 1000),
     ("f6-acoes", "/folhas/bloco5.html", "s-acoes", 1366, 1600),
     ("fc-cadeia", "/folhas/fechamento.html", "s-cadeia", 1366, 1300),
     ("f7-mapa", "/folhas/bloco6.html", "s-mapa", 1366, 1500),
@@ -57,6 +57,7 @@ CAPTURAS = [
     ("m-home", "/index.html", "", 520, 2000),
     ("m-f2-tows", "/folhas/bloco1.html", "s-tows", 520, 1800),
     ("m-f5a-obj", "/folhas/bloco4.html", "s-objetivos", 520, 1800),
+    ("m-f5-indicadores", "/folhas/bloco4.html", "s-indicadores", 520, 2600),
     ("m-f7-mapa", "/folhas/bloco6.html", "s-mapa", 520, 1500),
     ("m-guia-07", "/guias/07-bsc-mapa-estrategico.html", "exemplo-agrosense", 520, 1400),
 ]
