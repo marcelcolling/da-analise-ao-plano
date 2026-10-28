@@ -65,6 +65,7 @@ ferramentas/               gerar_guias.py, conferir_integridade.py, verificar_pa
 - Cabeçalho de seção: "Folha X · passo i de N". Guia e exemplo ficam juntos na linha de apoio. O exemplo e a folha da AgroSense abrem em nova aba; no modo exemplo, a navegação entre folhas continua no exemplo.
 - Fim de cada folha: cartão com o estado da lista final, "Salvar arquivo" e o próximo passo. O botão "Salvar arquivo" fica na barra superior e nesse cartão (não no topo da folha).
 - Home: o cartão "Seu caderno" mostra uma barra das 8 etapas e a próxima; a lista detalhada fica na trilha (não repetir).
+- Home: QR code do site (`assets/img/qrcode.svg`, gerado por `ferramentas/gerar_qrcode.py`, que precisa de `pip install segno`) para projetar na sala; "Projetar o QR code em tela cheia" ou `index.html#qrcode` abre a versão grande. Some no celular. Se o endereço do site mudar, gere de novo.
 - Desenhos (sistema de atividades e mapa) rolam para o lado no celular (`.svg-rolagem`), em vez de encolher o texto.
 
 ## Navegação e Folha 5 (revisão de 28/10/2026)

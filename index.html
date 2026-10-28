@@ -153,6 +153,25 @@
     .sessao-card { padding:1.2rem 1.1rem; }
   }
   @media (prefers-reduced-motion: reduce) { .rec, .etapa-card { transition:none; } }
+
+  /* QR code de acesso (para projetar na sala) */
+  .acesso { display:flex; align-items:center; gap:1rem; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.16); border-radius:16px; padding:0.8rem 1rem; margin:0 0 1.3rem; max-width:560px; }
+  .acesso img { flex-shrink:0; width:112px; height:112px; background:#fff; border-radius:10px; padding:4px; }
+  .acesso strong { display:block; font-size:0.95rem; color:#fff; }
+  .acesso span { display:block; font-size:0.82rem; color:rgba(255,255,255,0.75); margin:0.15rem 0 0.6rem; line-height:1.45; }
+  .acesso b { color:var(--am); font-weight:600; overflow-wrap:anywhere; }
+  .acesso .vd-btn { padding:0.5rem 0.9rem; font-size:0.82rem; }
+  .projecao { position:fixed; inset:0; z-index:2000; background:#fff; display:flex; align-items:center; justify-content:center; padding:2vh 2vw; }
+  .projecao[hidden] { display:none; }
+  body.projetando { overflow:hidden; }
+  .projecao-in { display:flex; flex-direction:column; align-items:center; text-align:center; gap:1.2vh; max-height:100%; }
+  .projecao img { width:min(68vh, 88vw); height:min(68vh, 88vw); }
+  .projecao-tag { margin:0; font-size:clamp(0.9rem,2.2vh,1.4rem); font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--am-ink); }
+  .projecao-url { margin:0; font-family:var(--display); font-weight:700; font-size:clamp(1.2rem,4.2vh,2.8rem); color:var(--az); overflow-wrap:anywhere; }
+  .projecao-dica { margin:0; font-size:clamp(0.9rem,2.4vh,1.4rem); color:var(--muted); }
+  .projecao .vd-btn { margin-top:0.6vh; }
+  /* no celular a pessoa já está no site: o código não ajuda */
+  @media (max-width:760px) { .acesso { display:none; } }
 </style>
 </head>
 <body>
@@ -163,6 +182,14 @@
       <span class="tag"><i></i>Workshop · Parque Tecnológico</span>
       <h1>Da Análise ao <em>Plano</em></h1>
       <p class="hero-sub">Planejamento estratégico para empresas de base tecnológica. Cada conceito vira, na hora, uma folha preenchida da sua empresa.</p>
+      <div class="acesso">
+        <img src="assets/img/qrcode.svg" alt="QR code para abrir este site no celular ou no notebook" width="112" height="112">
+        <div>
+          <strong>Abra no seu computador ou celular</strong>
+          <span>Aponte a câmera para o código ou digite <b>marcelcolling.github.io/<wbr>da-analise-ao-plano</b></span>
+          <button type="button" class="vd-btn vd-btn-claro" id="btnProjetar">⛶ Projetar o QR code em tela cheia</button>
+        </div>
+      </div>
       <ul class="hero-pontos">
         <li>Dois encontros de 3 horas. Na Aula 1, do diagnóstico às ações; na Aula 2, o mapa do BSC e o lançamento no sistema do parque.</li>
         <li>Em cada bloco: a exposição, o guia para consultar e, logo em seguida, a folha para aplicar na sua empresa.</li>
@@ -179,6 +206,16 @@
     </div>
   </div>
 </header>
+
+<div class="projecao" id="qrcode" hidden role="dialog" aria-modal="true" aria-label="QR code para projetar">
+  <div class="projecao-in">
+    <p class="projecao-tag">Workshop · Da Análise ao Plano</p>
+    <img src="assets/img/qrcode.svg" alt="QR code para abrir o site do workshop">
+    <p class="projecao-url">marcelcolling.github.io/<wbr>da-analise-ao-plano</p>
+    <p class="projecao-dica">Aponte a câmera do celular, ou digite o endereço no navegador do computador.</p>
+    <button type="button" class="vd-btn vd-btn-amarelo" id="btnFecharProjecao">Fechar (Esc)</button>
+  </div>
+</div>
 
 <main>
   <section class="bloco" id="trilha">
@@ -372,6 +409,28 @@
   document.getElementById('btnComo').onclick = function () { WS.abrirInstrucoes(); };
   document.getElementById('rodapeAjuda').onclick = function () { WS.abrirInstrucoes(); };
   if (location.hash === '#ajuda') WS.abrirInstrucoes();
+
+  // QR code em tela cheia, para projetar na sala (#qrcode no endereço abre direto)
+  var proj = document.getElementById('qrcode');
+  function projetar() {
+    proj.hidden = false;
+    document.body.classList.add('projetando');
+    document.getElementById('btnFecharProjecao').focus();
+    try { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () {}); } catch (e) {}
+  }
+  function fecharProjecao() {
+    proj.hidden = true;
+    document.body.classList.remove('projetando');
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+    document.getElementById('btnProjetar').focus();
+  }
+  document.getElementById('btnProjetar').onclick = projetar;
+  document.getElementById('btnFecharProjecao').onclick = fecharProjecao;
+  proj.addEventListener('click', function (e) { if (e.target === proj) fecharProjecao(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !proj.hidden) fecharProjecao(); });
+  document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && !proj.hidden) { proj.hidden = true; document.body.classList.remove('projetando'); } });
+  if (location.hash === '#qrcode') projetar();
+  window.addEventListener('hashchange', function () { if (location.hash === '#qrcode' && proj.hidden) projetar(); });
 
   var esc = WS.esc, F = WS_F, P = F.PAGINAS;
   function render() {

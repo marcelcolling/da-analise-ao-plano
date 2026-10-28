@@ -33,6 +33,7 @@ PORTA_SITE, PORTA_CDP = 8765, 9333
 CAPTURAS = [
     ("home", "/index.html", "", 1366, 1500),
     ("home-trilha", "/index.html", "trilha", 1366, 1500),
+    ("home-qrcode", "/index.html#qrcode", "", 1366, 768),
     ("f0", "/folhas/abertura.html", "", 1366, 1300),
     ("f0-futuro", "/folhas/abertura.html", "s-futuro", 1366, 1100),
     ("f1-externo", "/folhas/bloco1.html", "s-externo", 1366, 1300),
